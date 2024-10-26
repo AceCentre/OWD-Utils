@@ -1,23 +1,26 @@
-import socketio
 import time
-import sys
+import json
+import socketio
+from faker import Faker
 
-# Define WebSocket URL
-WEBSOCKET_URL = "wss://owd.acecentre.net"  # Replace with your actual WebSocket URL
+# Initialize Faker and generate a unique session ID
+fake = Faker()
+session_id = f"{fake.word()}-{fake.word()}-{fake.word()}"
+print(f"Generated Session ID: {session_id}")
 
-# Initialize socket.io client
-sio = socketio.Client()
+# WebSocket URL (replace with your actual URL)
+WEBSOCKET_URL = "ws://localhost:3000"  # replace with your WebSocket URL
+sio = socketio.Client(logger=True, engineio_logger=True)
 
-# Store session ID and WebRTCService-like connection flag
-session_id = None
 is_connected = False
+is_live_typing = False
 
 
-# Connect to WebSocket server
+# Connect to the WebSocket server and join session
 @sio.event
 def connect():
     global is_connected
-    print(f"Connected to WebSocket server, joining session: {session_id}")
+    print("Connected to WebSocket server.")
     sio.emit("joinSession", session_id)
     is_connected = True
 
@@ -30,62 +33,88 @@ def disconnect():
     is_connected = False
 
 
-# Handle receiving a signal from the display app (can be extended as needed)
-@sio.event
-def signal(data):
-    print(f"Signal received: {data}")
+# Signal handler
+@sio.on("signal")
+def on_signal(data):
+    message_type = data.get("type")
+    content = data.get("content")
+
+    if message_type == "channelConnected":
+        print("Display connected.")
+    elif message_type == "typing":
+        print("Display: Typing...")
+    elif message_type == "message":
+        print(f"Display: {content}")
 
 
-# Send a message to the WebSocket server
+# Send connection notification to Display
+def notify_connected():
+    message = json.dumps(
+        {
+            "type": "channelConnected",
+        }
+    )
+    sio.emit("signal", {"sessionId": session_id, "data": message})
+
+
+# Handle live typing messages
+def handle_typing():
+    global is_live_typing
+    print("\nEnable live typing? (y/n): ")
+    is_live_typing = input().lower() == "y"
+    if is_live_typing:
+        print("Live typing is enabled.")
+
+
+# Send a message to the display
 def send_message(message):
-    if is_connected and session_id:
-        print(f"Sending message: {message}")
-        sio.emit(
-            "signal",
-            {"sessionId": session_id, "data": {"type": "message", "content": message}},
-        )
-    else:
-        print("Cannot send message. Not connected or no session ID.")
+    message_data = {
+        "type": "message" if not is_live_typing else "typing",
+        "content": message,
+        "isLiveTyping": is_live_typing,
+    }
+    sio.emit("signal", {"sessionId": session_id, "data": json.dumps(message_data)})
 
 
-# Main application flow
+# Main app loop
 def main():
-    global session_id
+    global is_connected
 
-    # Input for session ID
-    session_id = input("Enter the 3-word session ID: ")
+    # Connect to the WebSocket server
+    sio.connect(WEBSOCKET_URL, transports=["websocket"])
+    notify_connected()  # Notify the display that the connection was established
 
+    # Enable live typing option
+    handle_typing()
+
+    # Main message loop
     try:
-        # Connect to WebSocket server
-        sio.connect(WEBSOCKET_URL)
-
-        # Main loop to send messages (mimics typing and sending messages)
         while True:
-            # Get message input from the command line
-            message = input("Type a message to send: ")
+            if not is_connected:
+                print("Waiting for connection...")
+                time.sleep(1)
+                continue
 
-            if message.strip():
-                send_message(message)
+            # Get user input
+            message = input("Enter message (or type 'exit' to quit): ")
+            if message.lower() == "exit":
+                break
+
+            # Send message or typing indicator
+            if is_live_typing:
+                for char in message:
+                    send_message(char)
+                    time.sleep(0.1)  # Simulate typing delay
             else:
-                print("Message is empty, not sending.")
-
-            # Optionally, simulate typing status
-            sio.emit(
-                "signal",
-                {
-                    "sessionId": session_id,
-                    "data": {"type": "typing", "content": "Writing..."},
-                },
-            )
-
-            # Pause for a second to mimic delay
-            time.sleep(1)
+                send_message(message)
 
     except KeyboardInterrupt:
-        print("Program interrupted. Disconnecting...")
+        print("Exiting...")
+
     finally:
         sio.disconnect()
 
 
+# Run the app
 if __name__ == "__main__":
     main()

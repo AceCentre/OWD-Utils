@@ -1,110 +1,85 @@
 const io = require("socket.io-client");
+const faker = require("@faker-js/faker").faker;
 const readline = require("readline");
+const qrcode = require("qrcode-terminal");
 
-const websocketURL = "wss://owd.acecentre.net";
-let sessionId = "";
-let webrtcService = null;
-let isConnected = false;
+// Configuration
+const WEBSOCKET_URL = "ws://localhost:3000"; // Replace with your server URL
+const BASE_URL = "http://localhost:3000/sender"; // Base URL for QR code
 
-const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
+// Generate session ID
+const generateSessionId = () => {
+    const word1 = faker.word.adjective();
+    const word2 = faker.word.adjective();
+    const word3 = faker.word.noun();
+    return `${word1}-${word2}-${word3}`;
+};
+const sessionId = generateSessionId();
+
+// Display QR code in the terminal
+const sessionURL = `${BASE_URL}?sessionId=${sessionId}`;
+qrcode.generate(sessionURL, { small: true });
+console.log(`Session ID: ${sessionId}`);
+console.log(`Scan the QR code above or visit: ${sessionURL}\n`);
+
+// WebSocket connection
+const socket = io(WEBSOCKET_URL, {
+    transports: ["websocket"],
+    withCredentials: true,
 });
 
-// WebRTCService class to handle signaling and message sending
-class WebRTCService {
-    constructor(onMessageReceived, isSender = true) {
-        this.socket = null;
-        this.onMessageReceived = onMessageReceived;
-        this.isSender = isSender;
-        this.isConnected = false;
-    }
+socket.on("connect", () => {
+    console.log("Connected to WebSocket server.");
+    socket.emit("joinSession", sessionId);
 
-    connect(websocketURL, sessionId) {
-        this.sessionId = sessionId;
-        this.socket = io(websocketURL, {
-            transports: ['websocket'],
-            withCredentials: true
-        });
-
-        this.socket.emit("joinSession", this.sessionId);
-
-        this.socket.on("signal", async (message) => {
-            if (this.isSender) {
-                if (message.type === "answer") {
-                    console.log("Received answer signal:", message.answer);
-                    this.isConnected = true;
-                }
-            } else {
-                if (message.type === "offer") {
-                    console.log("Received offer signal:", message.offer);
-                    const answer = {};  // You would handle answer creation in WebRTC here
-                    this.socket.emit("signal", {
-                        sessionId: this.sessionId,
-                        data: { type: "answer", answer }
-                    });
-                }
-            }
-
-            if (message.type === "ice-candidate") {
-                console.log("Received ICE candidate:", message.candidate);
-            }
-        });
-
-        this.socket.on("connect", () => {
-            console.log("WebSocket connected to:", websocketURL);
-            this.isConnected = true;
-        });
-    }
-
-    sendMessage(message) {
-        if (this.socket && this.isConnected) {
-            const msgData = { type: "message", content: message };
-            this.socket.emit("signal", {
-                sessionId: this.sessionId,
-                data: msgData
-            });
-            console.log("Message sent:", message);
-        } else {
-            console.warn("Not connected. Cannot send message.");
-        }
-    }
-
-    disconnect() {
-        if (this.socket) {
-            this.socket.disconnect();
-            this.isConnected = false;
-        }
-    }
-}
-
-function startSender() {
-    rl.question("Enter the 3-word session ID: ", (inputSessionId) => {
-        sessionId = inputSessionId.trim();
-
-        // Create WebRTCService instance
-        webrtcService = new WebRTCService((message) => {
-            console.log("Received:", message);
-        }, true);
-
-        // Connect to the WebSocket server
-        webrtcService.connect(websocketURL, sessionId);
-
-        // Start listening for messages to send
-        messageLoop();
+    // Notify channel connection
+    socket.emit("signal", {
+        sessionId: sessionId,
+        data: JSON.stringify({ type: "channelConnected" }),
     });
-}
+});
 
-function messageLoop() {
-    rl.question("Type a message to send: ", (message) => {
-        if (webrtcService && isConnected) {
-            webrtcService.sendMessage(message);
-        } else {
-            console.warn("Not connected. Message not sent.");
+socket.on("disconnect", () => {
+    console.log("Disconnected from WebSocket server.");
+});
+
+// Input and message handling
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+});
+
+// Prompt user for message and handle live typing
+const askForMessage = () => {
+    rl.question("Enter your message (or 'exit' to quit): ", (message) => {
+        if (message.toLowerCase() === "exit") {
+            rl.close();
+            socket.disconnect();
+            return;
         }
-        messageLoop(); // Recursively loop to allow continuous input
+        sendMessage(message);
+        askForMessage();
     });
-}
+};
 
-// Start the sender app
-startSender();
+// Send a regular or live typing message
+const sendMessage = (content, isTyping = false) => {
+    const message = {
+        type: isTyping ? "typing" : "message",
+        content: content,
+        isLiveTyping: false, // Adjust this if live typing should be enabled
+    };
+    socket.emit("signal", {
+        sessionId: sessionId,
+        data: JSON.stringify(message),
+    });
+    if (!isTyping) console.log(`Message sent: ${content}`);
+};
+
+// Listen for typing event
+rl.on("line", (input) => {
+    sendMessage(input, true); // Send typing event
+});
+
+// Start the main prompt loop
+askForMessage();

@@ -45,6 +45,15 @@ socket.on("peerJoined", async (data) => {
     const dataChannel = peerConnection.createDataChannel("messaging");
     dataChannels[peerId] = dataChannel;
 
+    // Add onopen check to confirm connection
+    dataChannel.onopen = () => {
+        console.log(`Data channel with peer ${peerId} is open`);
+    };
+
+    dataChannel.onmessage = (event) => {
+        console.log(`Message from ${peerId}: ${event.data}`);
+    };
+
     const offer = await peerConnection.createOffer();
     await peerConnection.setLocalDescription(offer);
 
@@ -75,8 +84,10 @@ function sendMessage(content) {
     const message = JSON.stringify({ type: "MESSAGE", content });
 
     Object.values(dataChannels).forEach((channel) => {
-        if (channel.readyState === "open") {
+        if (channel.readyState === "open") { // Check if channel is open
             channel.send(message);
+        } else {
+            console.warn("Data channel is not open. Message not sent.");
         }
     });
 }

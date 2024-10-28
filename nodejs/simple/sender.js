@@ -27,7 +27,10 @@ const socket = io(WEBSOCKET_URL, {
     withCredentials: true,
 });
 
+let isConnected = false;
+
 socket.on("connect", () => {
+    isConnected = true;
     socket.emit("joinSession", sessionId);
 });
 
@@ -96,6 +99,7 @@ socket.on("signal", async (message) => {
 });
 
 socket.on("disconnect", () => {
+    isConnected = false;
     console.log("Disconnected from WebSocket server.");
 });
 
@@ -124,16 +128,20 @@ const sendTypingNotification = () => {
 
 process.stdin.on("keypress", (str, key) => {
     if (key.name === "return") {
-        rl.question("Enter your message (or 'exit' to quit): ", (message) => {
-            if (message.toLowerCase() === "exit") {
-                rl.close();
-                socket.disconnect();
-                return;
-            }
-            sendMessage(message, false);
-            isTyping = false;
-            clearTimeout(typingTimeout);
-        });
+        if (isConnected) {
+            rl.question("Enter your message (or 'exit' to quit): ", (message) => {
+                if (message.toLowerCase() === "exit") {
+                    rl.close();
+                    socket.disconnect();
+                    return;
+                }
+                sendMessage(message, false);
+                isTyping = false;
+                clearTimeout(typingTimeout);
+            });
+        } else {
+            console.log("Not connected. Please wait until connected.");
+        }
     } else {
         sendTypingNotification();
     }
@@ -158,14 +166,26 @@ const sendMessage = (content, isTyping = false) => {
     });
 };
 
+let isReadlineClosed = false;
+
 const askForMessage = () => {
-    rl.question("Enter your message (or 'exit' to quit): ", (message) => {
-        if (message.toLowerCase() === "exit") {
-            rl.close();
-            socket.disconnect();
-            return;
-        }
-        sendMessage(message, false);
-        askForMessage();
-    });
+    if (isConnected && !isReadlineClosed) {
+        rl.question("Enter your message (or 'exit' to quit): ", (message) => {
+            if (message.toLowerCase() === "exit") {
+                isReadlineClosed = true;
+                rl.close();
+                socket.disconnect();
+                return;
+            }
+            sendMessage(message, false);
+            askForMessage();
+        });
+    } else {
+        console.log("Not connected. Please wait until connected.");
+    }
 };
+
+rl.on('close', () => {
+    isReadlineClosed = true;
+    console.log('Readline interface closed.');
+});

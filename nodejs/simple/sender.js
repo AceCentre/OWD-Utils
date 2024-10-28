@@ -5,7 +5,7 @@ const qrcode = require("qrcode-terminal");
 const { RTCPeerConnection, RTCSessionDescription } = require("wrtc");
 
 const WEBSOCKET_URL = "ws://owd.acecentre.net";
-const BASE_URL = "https://owd.acecentre.net/sender";
+const BASE_URL = "https://owd.acecentre.net/";
 
 const generateSessionId = () => {
     const word1 = faker.word.adjective();

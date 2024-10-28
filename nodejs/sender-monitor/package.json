@@ -1,26 +1,41 @@
 {
     "name": "clipboard-webrtc-app",
     "version": "1.0.0",
+    "description": "Clipboard WebRTC app for monitoring clipboard and sending data over WebRTC.",
+    "author": "Will Wade <wwade@acecentre.org.uk>",
     "main": "main.js",
     "scripts": {
         "start": "electron .",
-        "package": "pkg ."
+        "package": "electron-builder"
+    },
+    "build": {
+        "appId": "uk.org.acecentre.clipboardowd",
+        "productName": "Clipboard WebRTC App",
+        "files": [
+            "main.js",
+            "webrtc.js",
+            "icon.png",
+            "node_modules/**/*"
+        ],
+        "directories": {
+            "output": "dist"
+        },
+        "win": {
+            "target": [
+                "nsis",
+                "portable"
+            ],
+            "signAndEditExecutable": false
+        }
     },
     "dependencies": {
+        "@faker-js/faker": "^9.1.0",
         "clipboardy": "^2.3.0",
-        "electron": "^25.0.0",
         "socket.io-client": "^4.8.1",
-        "wrtc": "^0.4.7",
-        "@faker-js/faker": "^9.1.0"
+        "wrtc": "^0.4.7"
     },
-    "pkg": {
-        "assets": [
-            "icon.png"
-        ],
-        "targets": [
-            "node18-win-x64",
-            "node18-macos-x64",
-            "node18-linux-x64"
-        ]
+    "devDependencies": {
+        "electron": "^25.0.0",
+        "electron-builder": "^25.1.8"
     }
 }

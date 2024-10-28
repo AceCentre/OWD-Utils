@@ -15,7 +15,24 @@
             "main.js",
             "webrtc.js",
             "icon.png",
-            "node_modules/**/*"
+            "node_modules/**/*",
+            {
+                "from": "icon-connected.png",
+                "to": "icon-connected.png",
+                "filter": [
+                    "**/*"
+                ]
+            },
+            {
+                "from": "icon-disconnected.png",
+                "to": "icon-disconnected.png",
+                "filter": [
+                    "**/*"
+                ]
+            }
+        ],
+        "asarUnpack": [
+            "**/*.png"
         ],
         "directories": {
             "output": "dist"

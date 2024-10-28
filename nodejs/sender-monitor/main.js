@@ -9,6 +9,16 @@ let isConnected = false;
 
 const logFilePath = path.join(app.getPath("userData"), "log.txt");
 
+function getIconPath(iconName) {
+    if (app.isPackaged) {
+        // Path in production: uses process.resourcesPath
+        return path.join(process.resourcesPath, iconName);
+    } else {
+        // Path in development
+        return path.join(__dirname, iconName);
+    }
+}
+
 function logMessage(message) {
     const timestamp = new Date().toISOString();
     fs.appendFileSync(logFilePath, `[${timestamp}] ${message}\n`);
@@ -16,8 +26,8 @@ function logMessage(message) {
 
 function updateTrayIcon() {
     const iconPath = isConnected
-        ? path.join(__dirname, "icon-connected.png")
-        : path.join(__dirname, "icon-disconnected.png");
+        ? getIconPath("icon-connected.png")
+        : getIconPath("icon-disconnected.png");
     tray.setImage(iconPath);
 }
 
@@ -30,7 +40,7 @@ app.on("ready", () => {
     logMessage(`Session ID: ${sessionId}`);
 
     // Set up system tray icon initially as disconnected
-    tray = new Tray(path.join(__dirname, "icon-disconnected.png"));
+    tray = new Tray(getIconPath("icon-disconnected.png"));
     tray.setToolTip(`Session ID: ${sessionId}`);
 
     // Add context menu with options

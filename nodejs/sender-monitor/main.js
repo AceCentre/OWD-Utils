@@ -1,7 +1,10 @@
 const { app, Tray, Menu, shell, clipboard } = require("electron");
 const path = require("path");
 const fs = require("fs");
+const robot = require("robotjs");
+const ocr = require("./ocr");
 const webrtc = require("./webrtc");
+const config = require("./config.json");  // Load configuration
 
 let tray;
 let lastText = "";
@@ -10,13 +13,7 @@ let isConnected = false;
 const logFilePath = path.join(app.getPath("userData"), "log.txt");
 
 function getIconPath(iconName) {
-    if (app.isPackaged) {
-        // Path in production: uses process.resourcesPath
-        return path.join(process.resourcesPath, iconName);
-    } else {
-        // Path in development
-        return path.join(__dirname, iconName);
-    }
+    return app.isPackaged ? path.join(process.resourcesPath, iconName) : path.join(__dirname, iconName);
 }
 
 function logMessage(message) {
@@ -25,45 +22,43 @@ function logMessage(message) {
 }
 
 function updateTrayIcon() {
-    const iconPath = isConnected
-        ? getIconPath("icon-connected.png")
-        : getIconPath("icon-disconnected.png");
+    const iconPath = isConnected ? getIconPath("icon-connected.png") : getIconPath("icon-disconnected.png");
     tray.setImage(iconPath);
 }
 
+async function captureScreenAreaAndProcess() {
+    const { x, y, width, height } = config.captureArea;
+    const screenCapture = robot.screen.capture(x, y, width, height);
+    const filePath = path.join(__dirname, "temp-capture.png");
+
+    fs.writeFileSync(filePath, screenCapture.image);
+
+    const recognizedText = await ocr.performOCR(filePath);
+    if (recognizedText) {
+        webrtc.sendMessage(recognizedText);
+        logMessage(`Sent recognized text: ${recognizedText}`);
+    }
+
+    fs.unlinkSync(filePath);
+}
+
 app.on("ready", () => {
-    // Log start of the session
     logMessage("App started");
 
-    // Generate a session ID and start the WebRTC connection
     const sessionId = webrtc.startSession();
     logMessage(`Session ID: ${sessionId}`);
 
-    // Set up system tray icon initially as disconnected
     tray = new Tray(getIconPath("icon-disconnected.png"));
     tray.setToolTip(`Session ID: ${sessionId}`);
 
-    // Add context menu with options
     const contextMenu = Menu.buildFromTemplate([
-        {
-            label: "Open Log Directory",
-            click: () => {
-                shell.showItemInFolder(logFilePath); // Opens the log file directory
-            }
-        },
-        {
-            label: "Copy Session ID",
-            click: () => {
-                clipboard.writeText(sessionId); // Copies the session ID to clipboard
-                logMessage("Session ID copied to clipboard");
-            }
-        },
+        { label: "Open Log Directory", click: () => shell.showItemInFolder(logFilePath) },
+        { label: "Copy Session ID", click: () => clipboard.writeText(sessionId) },
         { type: "separator" },
-        { label: "Quit", click: () => app.quit() },
+        { label: "Quit", click: () => app.quit() }
     ]);
     tray.setContextMenu(contextMenu);
 
-    // Listen for WebRTC connection changes
     webrtc.on("connected", () => {
         isConnected = true;
         updateTrayIcon();
@@ -76,15 +71,21 @@ app.on("ready", () => {
         logMessage("Disconnected from WebRTC peer");
     });
 
-    // Monitor the clipboard for text changes every second
-    setInterval(() => {
-        const currentText = clipboard.readText();
-        if (currentText && currentText !== lastText) {
-            webrtc.sendMessage(currentText);
-            lastText = currentText;
-            logMessage(`Clipboard changed: ${currentText}`);
-        }
-    }, 1000);
+    // Choose monitoring mode based on config setting
+    if (config.monitorMode === "clipboard") {
+        // Clipboard monitoring
+        setInterval(() => {
+            const currentText = clipboard.readText();
+            if (currentText && currentText !== lastText) {
+                webrtc.sendMessage(currentText);
+                lastText = currentText;
+                logMessage(`Clipboard changed: ${currentText}`);
+            }
+        }, config.captureInterval);
+    } else if (config.monitorMode === "ocr") {
+        // OCR-based screen area capture
+        setInterval(captureScreenAreaAndProcess, config.captureInterval);
+    }
 });
 
 app.on("window-all-closed", () => {

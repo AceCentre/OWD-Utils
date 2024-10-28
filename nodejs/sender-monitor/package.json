@@ -49,10 +49,10 @@
         "@faker-js/faker": "^9.1.0",
         "clipboardy": "^2.3.0",
         "socket.io-client": "^4.8.1",
-        "wrtc": "^0.4.7",
-        "node-pre-gyp": "^1.0.11"
+        "wrtc": "^0.4.7"
     },
     "devDependencies": {
+        "node-pre-gyp": "^1.0.11",
         "electron": "^25.0.0",
         "electron-builder": "^25.1.8"
     }

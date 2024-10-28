@@ -50,7 +50,7 @@
         "clipboardy": "^2.3.0",
         "socket.io-client": "^4.8.1",
         "wrtc": "^0.4.7",
-        "node-pre-gyp": "^1.0.10"
+        "node-pre-gyp": "^1.0.11"
     },
     "devDependencies": {
         "electron": "^25.0.0",

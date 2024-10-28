@@ -1,0 +1,26 @@
+{
+    "name": "clipboard-webrtc-app",
+    "version": "1.0.0",
+    "main": "main.js",
+    "scripts": {
+        "start": "electron .",
+        "package": "pkg ."
+    },
+    "dependencies": {
+        "clipboardy": "^2.3.0",
+        "electron": "^25.0.0",
+        "socket.io-client": "^4.8.1",
+        "wrtc": "^0.4.7",
+        "@faker-js/faker": "^9.1.0"
+    },
+    "pkg": {
+        "assets": [
+            "icon.png"
+        ],
+        "targets": [
+            "node18-win-x64",
+            "node18-macos-x64",
+            "node18-linux-x64"
+        ]
+    }
+}

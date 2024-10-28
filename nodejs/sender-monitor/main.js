@@ -5,12 +5,20 @@ const webrtc = require("./webrtc");
 
 let tray;
 let lastText = "";
+let isConnected = false;
 
 const logFilePath = path.join(app.getPath("userData"), "log.txt");
 
 function logMessage(message) {
     const timestamp = new Date().toISOString();
     fs.appendFileSync(logFilePath, `[${timestamp}] ${message}\n`);
+}
+
+function updateTrayIcon() {
+    const iconPath = isConnected
+        ? path.join(__dirname, "icon-connected.png")
+        : path.join(__dirname, "icon-disconnected.png");
+    tray.setImage(iconPath);
 }
 
 app.on("ready", () => {
@@ -21,8 +29,8 @@ app.on("ready", () => {
     const sessionId = webrtc.startSession();
     logMessage(`Session ID: ${sessionId}`);
 
-    // Set up system tray icon
-    tray = new Tray(path.join(__dirname, "icon.png"));
+    // Set up system tray icon initially as disconnected
+    tray = new Tray(path.join(__dirname, "icon-disconnected.png"));
     tray.setToolTip(`Session ID: ${sessionId}`);
 
     // Add context menu with options
@@ -44,6 +52,19 @@ app.on("ready", () => {
         { label: "Quit", click: () => app.quit() },
     ]);
     tray.setContextMenu(contextMenu);
+
+    // Listen for WebRTC connection changes
+    webrtc.on("connected", () => {
+        isConnected = true;
+        updateTrayIcon();
+        logMessage("Connected to WebRTC peer");
+    });
+
+    webrtc.on("disconnected", () => {
+        isConnected = false;
+        updateTrayIcon();
+        logMessage("Disconnected from WebRTC peer");
+    });
 
     // Monitor the clipboard for text changes every second
     setInterval(() => {

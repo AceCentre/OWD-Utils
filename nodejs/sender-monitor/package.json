@@ -5,6 +5,7 @@
     "author": "Will Wade <wwade@acecentre.org.uk>",
     "main": "main.js",
     "scripts": {
+        "rebuild": "electron-rebuild",
         "start": "electron .",
         "package": "electron-builder"
     },
@@ -51,8 +52,11 @@
         "wrtc": "^0.4.7"
     },
     "devDependencies": {
-        "node-pre-gyp": "^1.0.9",
+        "edge-js": "^23.1.0",
         "electron": "^25.0.0",
-        "electron-builder": "^25.1.8"
+        "electron-builder": "^25.1.8",
+        "@electron/rebuild": "^3.2.10",
+        "robotjs": "^0.6.0",
+        "tesseract.js": "^5.1.1"
     }
 }

@@ -1,4 +1,4 @@
-const edge = require("edge-js");
+const edge = require("electron-edge-js");
 const Tesseract = require("tesseract.js");
 const path = require("path");
 
@@ -32,6 +32,8 @@ const ocrImageEdge = edge.func({
         }
     */},
     references: [
+        "System.Runtime.dll",
+        "System.Threading.Tasks.dll",
         path.join(__dirname, "libs/System.Runtime.WindowsRuntime.dll"),
         path.join(__dirname, "libs/Windows.winmd")
     ]

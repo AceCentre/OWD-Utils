@@ -1,7 +1,7 @@
 const { app, Tray, Menu, shell, clipboard } = require("electron");
 const path = require("path");
 const fs = require("fs");
-const { Monitor } = require("node-screenshot");
+const { Monitor } = require("node-screenshots");
 const ocr = require("./ocr");
 const webrtc = require("./webrtc");
 const config = require("./config.json");  // Load configuration

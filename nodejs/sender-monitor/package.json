@@ -6,7 +6,7 @@
     "main": "main.js",
     "scripts": {
         "start": "electron .",
-        "package": "electron-builder",
+        "package": "electron-builder"
     },
     "build": {
         "appId": "uk.org.acecentre.clipboardowd",
@@ -47,14 +47,15 @@
     },
     "dependencies": {
         "@faker-js/faker": "^9.1.0",
-        "socket.io-client": "^4.8.1",
-        "wrtc": "^0.4.7",
+        "electron": "^33.0.2",
+        "electron-edge-js": "^33.0.1",
         "node-screenshots": "^0.2.2",
+        "socket.io-client": "^4.8.1",
         "tesseract.js": "^5.1.1",
-        "edge-js": "^23.1.0",
-        "electron": "^25.0.0"
+        "wrtc": "^0.4.7"
     },
     "devDependencies": {
-        "electron-builder": "^25.1.8",
+        "@electron/rebuild": "^3.2.10",
+        "electron-builder": "^25.1.8"
     }
 }

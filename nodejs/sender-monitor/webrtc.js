@@ -39,40 +39,44 @@ class WebRTCConnection extends EventEmitter {
         });
 
         this.socket.on("peerJoined", async (data) => {
-            const peerId = data.peerId;
-            const peerConnection = RTCPeerConnection({ iceServers });
+            try {
+                const peerId = data.peerId;
+                const peerConnection = RTCPeerConnection({ iceServers });
 
-            this.peerConnections[peerId] = peerConnection;
+                this.peerConnections[peerId] = peerConnection;
 
-            peerConnection.onicecandidate = (event) => {
-                if (event.candidate) {
-                    this.socket.emit("signal", {
-                        sessionId: this.sessionId,
-                        peerId: peerId,
-                        data: { type: "ice-candidate", candidate: event.candidate },
-                    });
-                }
-            };
+                peerConnection.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        this.socket.emit("signal", {
+                            sessionId: this.sessionId,
+                            peerId: peerId,
+                            data: { type: "ice-candidate", candidate: event.candidate },
+                        });
+                    }
+                };
 
-            const dataChannel = peerConnection.createDataChannel("messaging");
-            this.dataChannels[peerId] = dataChannel;
+                const dataChannel = peerConnection.createDataChannel("messaging");
+                this.dataChannels[peerId] = dataChannel;
 
-            dataChannel.onopen = () => {
-                this.emit("connected"); // Emit connected event when data channel is open
-            };
+                dataChannel.onopen = () => {
+                    this.emit("connected"); // Emit connected event when data channel is open
+                };
 
-            dataChannel.onclose = () => {
-                this.emit("disconnected"); // Emit disconnected event when data channel closes
-            };
+                dataChannel.onclose = () => {
+                    this.emit("disconnected"); // Emit disconnected event when data channel closes
+                };
 
-            const offer = await peerConnection.createOffer();
-            await peerConnection.setLocalDescription(offer);
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
 
-            this.socket.emit("signal", {
-                sessionId: this.sessionId,
-                peerId: peerId,
-                data: { type: "offer", offer },
-            });
+                this.socket.emit("signal", {
+                    sessionId: this.sessionId,
+                    peerId: peerId,
+                    data: { type: "offer", offer },
+                });
+            } catch (error) {
+                console.error("Error in peerJoined event:", error);
+            }
         });
 
         this.socket.on("signal", async (message) => {

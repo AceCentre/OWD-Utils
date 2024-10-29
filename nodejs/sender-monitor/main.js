@@ -78,7 +78,7 @@ app.on("ready", () => {
 
     const sessionId = webrtc.startSession();
     logMessage(`Session ID: ${sessionId}`);
-    const displayAppURL = `https://owd.acecentre.net/?senderId=${sessionId}`;
+    const displayAppURL = `https://owd.acecentre.net/?sessionId=${sessionId}`;
 
     tray = new Tray(getIconPath("icon-disconnected.png"));
     tray.setToolTip(`Session ID: ${sessionId}`);

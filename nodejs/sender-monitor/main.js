@@ -13,10 +13,15 @@ const logFilePath = path.join(app.getPath("userData"), "log.txt");
 
 function createQRWindow(url) {
     if (qrWindow) {
-        qrWindow.close();
+        if (qrWindow.isVisible()) {
+            qrWindow.hide(); // If the window is already visible, hide it
+        } else {
+            qrWindow.show(); // If the window exists but is hidden, just show it
+        }
+        return;
     }
 
-    // Increase the window size a bit to avoid scrollbars and add room for a close button.
+    // Create the window only if it doesn’t already exist
     qrWindow = new BrowserWindow({
         width: 220,
         height: 240,
@@ -29,7 +34,6 @@ function createQRWindow(url) {
         }
     });
 
-    // HTML with the QR code image and a close button
     const htmlContent = `
         <html>
             <body style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0;">
@@ -41,9 +45,8 @@ function createQRWindow(url) {
     qrWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`);
     qrWindow.show();
 
-    // Set qrWindow to null when it’s closed to avoid closing the entire app
     qrWindow.on("closed", () => {
-        qrWindow = null;
+        qrWindow = null; // Dereference to avoid memory leaks
     });
 }
 

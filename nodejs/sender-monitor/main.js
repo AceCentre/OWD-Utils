@@ -1,7 +1,7 @@
 const { app, Tray, Menu, shell, clipboard } = require("electron");
 const path = require("path");
 const fs = require("fs");
-const robot = require("robotjs");
+const { Monitor } = require("node-screenshot");
 const ocr = require("./ocr");
 const webrtc = require("./webrtc");
 const config = require("./config.json");  // Load configuration
@@ -26,20 +26,27 @@ function updateTrayIcon() {
     tray.setImage(iconPath);
 }
 
-async function captureScreenAreaAndProcess() {
+
+async function captureAndProcessScreen() {
     const { x, y, width, height } = config.captureArea;
-    const screenCapture = robot.screen.capture(x, y, width, height);
-    const filePath = path.join(__dirname, "temp-capture.png");
 
-    fs.writeFileSync(filePath, screenCapture.image);
+    // Capture and crop the screen
+    try {
+        const monitor = Monitor.all().find(m => m.isPrimary); // Capture from the primary monitor
+        const fullImage = await monitor.captureImage(); // Capture the screen
+        const croppedImage = await fullImage.crop(x, y, width, height); // Crop the image
 
-    const recognizedText = await ocr.performOCR(filePath);
-    if (recognizedText) {
-        webrtc.sendMessage(recognizedText);
-        logMessage(`Sent recognized text: ${recognizedText}`);
+        const buffer = await croppedImage.toPng(); // Convert cropped image to buffer
+        const recognizedText = await performOCR(buffer); // OCR on cropped image
+
+        if (recognizedText) {
+            webrtc.sendMessage(recognizedText); // Send OCR result over WebRTC
+            logMessage(`Captured OCR text: ${recognizedText}`);
+        }
+    } catch (error) {
+        console.error("Screen capture or OCR failed:", error);
+        logMessage("Error during screen capture or OCR");
     }
-
-    fs.unlinkSync(filePath);
 }
 
 app.on("ready", () => {

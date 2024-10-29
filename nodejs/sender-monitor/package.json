@@ -5,10 +5,8 @@
     "author": "Will Wade <wwade@acecentre.org.uk>",
     "main": "main.js",
     "scripts": {
-        "rebuild": "electron-rebuild",
         "start": "electron .",
         "package": "electron-builder",
-        "postinstall": "electron-rebuild -v 25.9.8"
     },
     "build": {
         "appId": "uk.org.acecentre.clipboardowd",
@@ -50,14 +48,13 @@
     "dependencies": {
         "@faker-js/faker": "^9.1.0",
         "socket.io-client": "^4.8.1",
-        "wrtc": "^0.4.7"
+        "wrtc": "^0.4.7",
+        "node-screenshots": "^0.2.2",
+        "tesseract.js": "^5.1.1",
+        "edge-js": "^23.1.0",
+        "electron": "^25.0.0"
     },
     "devDependencies": {
-        "edge-js": "^23.1.0",
-        "electron": "^25.0.0",
         "electron-builder": "^25.1.8",
-        "@electron/rebuild": "^3.2.10",
-        "robotjs": "^0.6.0",
-        "tesseract.js": "^5.1.1"
     }
 }

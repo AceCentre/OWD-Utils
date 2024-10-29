@@ -15,11 +15,18 @@
             {
                 "from": "assets",
                 "to": "assets"
+            },
+            {
+                "from": "libs",
+                "to": "libs"
             }
         ],
         "files": [
             "main.js",
             "webrtc.js",
+            "ocr.js",
+            "config.json",
+            "libs/**/*",
             "icon.png",
             "node_modules/**/*",
             "assets/**/*"

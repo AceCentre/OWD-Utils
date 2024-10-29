@@ -174,14 +174,17 @@ app.on("ready", () => {
     });
 
     // Clipboard monitoring
-    setInterval(() => {
-        const currentText = clipboard.readText();
-        if (currentText && currentText !== lastText) {
-            webrtc.sendMessage(currentText);
-            lastText = currentText;
-            logMessage(`Clipboard changed: ${currentText}`);
-        }
-    }, 1000);
+    if (config.monitorMode === "clipboard") {
+        setInterval(() => {
+            const currentText = clipboard.readText();
+            processAndSendText(currentText);
+        }, config.captureInterval);
+    } else if (config.monitorMode === "ocr") {
+        setInterval(async () => {
+            const recognizedText = await captureAndProcessScreen();
+            processAndSendText(recognizedText);
+        }, config.captureInterval);
+    }
 });
 
 

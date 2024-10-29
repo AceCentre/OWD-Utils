@@ -11,13 +11,12 @@ const logFilePath = path.join(app.getPath("userData"), "log.txt");
 
 function getIconPath(iconName) {
     if (app.isPackaged) {
-        // Path in production: uses process.resourcesPath
-        return path.join(process.resourcesPath, iconName);
+        return path.join(process.resourcesPath, "assets", "icons", iconName);
     } else {
-        // Path in development
-        return path.join(__dirname, iconName);
+        return path.join(__dirname, "assets", "icons", iconName);
     }
 }
+
 
 function logMessage(message) {
     const timestamp = new Date().toISOString();

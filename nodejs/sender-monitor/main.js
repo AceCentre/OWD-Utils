@@ -20,7 +20,7 @@ function createQRWindow(url) {
     qrWindow = new BrowserWindow({
         width: 220,
         height: 240,
-        frame: false,       // Remove the frame for a clean look
+        frame: false,
         alwaysOnTop: true,
         resizable: false,
         show: false,
@@ -40,6 +40,11 @@ function createQRWindow(url) {
 
     qrWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`);
     qrWindow.show();
+
+    // Set qrWindow to null when it’s closed to avoid closing the entire app
+    qrWindow.on("closed", () => {
+        qrWindow = null;
+    });
 }
 
 function getIconPath(iconName) {

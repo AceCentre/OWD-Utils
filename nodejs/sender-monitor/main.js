@@ -1,4 +1,4 @@
-const { app, Tray, Menu, shell, clipboard, BrowserWindow } = require("electron");
+const { app, Tray, Menu, shell, clipboard, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const webrtc = require("./webrtc");
@@ -11,17 +11,17 @@ let isConnected = false;
 
 const logFilePath = path.join(app.getPath("userData"), "log.txt");
 
+ipcMain.on("close-qr-window", () => {
+    if (qrWindow) {
+        qrWindow.close();
+    }
+});
+
 function createQRWindow(url) {
     if (qrWindow) {
-        if (qrWindow.isVisible()) {
-            qrWindow.hide(); // If the window is already visible, hide it
-        } else {
-            qrWindow.show(); // If the window exists but is hidden, just show it
-        }
-        return;
+        qrWindow.close();
     }
 
-    // Create the window only if it doesn’t already exist
     qrWindow = new BrowserWindow({
         width: 220,
         height: 240,
@@ -31,14 +31,20 @@ function createQRWindow(url) {
         show: false,
         webPreferences: {
             contextIsolation: true,
+            preload: path.join(__dirname, "preload.js"), // Preload script for IPC
         }
     });
 
     const htmlContent = `
         <html>
             <body style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0;">
-                <button onclick="window.close()" style="position: absolute; top: 10px; right: 10px; padding: 2px 6px; cursor: pointer;">✖</button>
+                <button id="closeButton" style="position: absolute; top: 10px; right: 10px; padding: 2px 6px; cursor: pointer;">✖</button>
                 <img src="${url}" width="200" height="200" style="display: block; margin-top: 20px;" />
+                <script>
+                    document.getElementById("closeButton").addEventListener("click", () => {
+                        window.closeQRWindow();
+                    });
+                </script>
             </body>
         </html>`;
 
@@ -46,7 +52,7 @@ function createQRWindow(url) {
     qrWindow.show();
 
     qrWindow.on("closed", () => {
-        qrWindow = null; // Dereference to avoid memory leaks
+        qrWindow = null; // Nullify qrWindow when it's closed
     });
 }
 

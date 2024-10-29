@@ -19,7 +19,7 @@
             "assets/**/*"
         ],
         "asarUnpack": [
-            "assets/**/*.png"
+            "assets"
         ],
         "directories": {
             "output": "dist"

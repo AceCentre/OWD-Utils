@@ -4,9 +4,7 @@ const { EventEmitter } = require("events");
 const faker = require("@faker-js/faker").faker;
 
 const WEBSOCKET_URL = "wss://owd.acecentre.net";
-const BASE_URL = "https://owd.acecentre.net/";
 
-// Extend EventEmitter to allow emitting connection events
 class WebRTCConnection extends EventEmitter {
     constructor() {
         super();

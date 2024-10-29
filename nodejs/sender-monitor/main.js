@@ -11,11 +11,14 @@ const logFilePath = path.join(app.getPath("userData"), "log.txt");
 
 function getIconPath(iconName) {
     if (app.isPackaged) {
-        return path.join(process.resourcesPath, "assets", "icons", iconName);
+        // Path for the production app (packaged)
+        return path.join(process.resourcesPath, "assets", iconName);
     } else {
-        return path.join(__dirname, "assets", "icons", iconName);
+        // Path for development mode
+        return path.join(__dirname, "assets", iconName);
     }
 }
+
 
 
 function logMessage(message) {
@@ -27,13 +30,13 @@ function updateTrayIcon() {
     const iconPath = isConnected
         ? getIconPath("icon-connected.png")
         : getIconPath("icon-disconnected.png");
+    console.log("Trying to load icon from path:", iconPath);
     tray.setImage(iconPath);
 }
 
 app.on("ready", () => {
     // Log start of the session
     logMessage("App started");
-
     // Generate a session ID and start the WebRTC connection
     const sessionId = webrtc.startSession();
     logMessage(`Session ID: ${sessionId}`);
@@ -85,6 +88,7 @@ app.on("ready", () => {
         }
     }, 1000);
 });
+
 
 app.on("window-all-closed", () => {
     if (process.platform !== "darwin") app.quit();

@@ -51,8 +51,7 @@
         "wrtc": "^0.4.7"
     },
     "devDependencies": {
-        "node-pre-gyp": "^1.0.9",
-        "electron": "^25.0.0",
+        "electron": "^33.0.2",
         "electron-builder": "^25.1.8"
     }
 }

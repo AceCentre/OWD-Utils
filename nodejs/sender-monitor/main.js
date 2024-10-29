@@ -98,8 +98,13 @@ app.on("ready", () => {
     tray.setToolTip(`Session ID: ${sessionId}`);
 
     QRCode.toDataURL(displayAppURL, (err, url) => {
-        if (err) console.error("Failed to generate QR code:", err);
-        else {
+        if (err) {
+            console.error("Failed to generate QR code:", err);
+        } else {
+            // Show the QR code window at startup
+            createQRWindow(url);
+
+            // Set up tray context menu with the QR option and other options
             const contextMenu = Menu.buildFromTemplate([
                 { label: "Show QR Code", click: () => createQRWindow(url) },
                 {
@@ -120,6 +125,7 @@ app.on("ready", () => {
         }
     });
 
+    // WebRTC connection events
     webrtc.on("connected", () => {
         isConnected = true;
         updateTrayIcon();
@@ -132,6 +138,7 @@ app.on("ready", () => {
         logMessage("Disconnected from WebRTC peer");
     });
 
+    // Clipboard monitoring
     setInterval(() => {
         const currentText = clipboard.readText();
         if (currentText && currentText !== lastText) {

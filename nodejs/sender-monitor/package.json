@@ -11,6 +11,12 @@
     "build": {
         "appId": "uk.org.acecentre.clipboardowd",
         "productName": "Clipboard WebRTC App",
+        "extraResources": [
+            {
+                "from": "assets",
+                "to": "assets"
+            }
+        ],
         "files": [
             "main.js",
             "webrtc.js",
@@ -19,8 +25,8 @@
             "assets/**/*"
         ],
         "asarUnpack": [
-            "assets"
-        ],
+        "**/*.png"
+       ],
         "directories": {
             "output": "dist"
         },

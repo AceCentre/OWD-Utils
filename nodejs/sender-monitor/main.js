@@ -30,9 +30,15 @@ function updateTrayIcon() {
     const iconPath = isConnected
         ? getIconPath("icon-connected.png")
         : getIconPath("icon-disconnected.png");
-    console.log("Trying to load icon from path:", iconPath);
-    tray.setImage(iconPath);
+    logMessage(`Trying to load icon from path: ${iconPath}`);
+    
+    try {
+        tray.setImage(iconPath);
+    } catch (error) {
+        logMessage(`Failed to set tray icon: ${error.message}`);
+    }
 }
+
 
 app.on("ready", () => {
     // Log start of the session

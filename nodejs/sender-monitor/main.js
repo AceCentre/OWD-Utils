@@ -3,6 +3,9 @@ const path = require("path");
 const fs = require("fs");
 const webrtc = require("./webrtc");
 const QRCode = require("qrcode");
+const { Monitor } = require("node-screenshots");
+const { performOCR } = require("./ocr");
+const config = require("./config.json");
 
 let tray;
 let qrWindow;
@@ -54,6 +57,38 @@ function createQRWindow(url) {
     qrWindow.on("closed", () => {
         qrWindow = null; // Nullify qrWindow when it's closed
     });
+}
+
+// Capture and OCR function with return of recognized text
+async function captureAndProcessScreen() {
+    const { x, y, width, height, useEdgeForOCR } = config.captureArea;
+
+    try {
+        const monitor = Monitor.all().find(m => m.isPrimary);
+        const fullImage = await monitor.captureImage();
+        const croppedImage = await fullImage.crop(x, y, width, height);
+
+        const filePath = path.join(app.getPath("temp"), "ocr-capture.png");
+        fs.writeFileSync(filePath, await croppedImage.toPng());
+
+        const recognizedText = await performOCR(filePath, useEdgeForOCR);
+
+        fs.unlinkSync(filePath);  // Clean up temp file
+
+        return recognizedText || ""; // Return the OCR text or an empty string
+    } catch (error) {
+        console.error("Screen capture or OCR failed:", error);
+        logMessage("Error during screen capture or OCR");
+        return "";
+    }
+}
+
+function processAndSendText(text) {
+    if (text && text !== lastText) {
+        webrtc.sendMessage(text);
+        lastText = text;
+        logMessage(`Text sent: ${text}`);
+    }
 }
 
 function getIconPath(iconName) {

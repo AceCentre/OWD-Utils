@@ -2,6 +2,7 @@ const { io } = require("socket.io-client");
 const { RTCPeerConnection, RTCSessionDescription } = require("wrtc");
 const { EventEmitter } = require("events");
 const faker = require("@faker-js/faker").faker;
+import iceServers from "iceServers";
 
 const WEBSOCKET_URL = "wss://owd.acecentre.net";
 
@@ -39,7 +40,7 @@ class WebRTCConnection extends EventEmitter {
 
         this.socket.on("peerJoined", async (data) => {
             const peerId = data.peerId;
-            const peerConnection = new RTCPeerConnection();
+            const peerConnection = RTCPeerConnection({ iceServers });
 
             this.peerConnections[peerId] = peerConnection;
 

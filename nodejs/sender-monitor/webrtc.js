@@ -2,7 +2,7 @@ const { io } = require("socket.io-client");
 const { RTCPeerConnection, RTCSessionDescription } = require("wrtc");
 const { EventEmitter } = require("events");
 const faker = require("@faker-js/faker").faker;
-import iceServers from "iceServers";
+const iceServers = require("./iceServers");
 
 const WEBSOCKET_URL = "wss://owd.acecentre.net";
 

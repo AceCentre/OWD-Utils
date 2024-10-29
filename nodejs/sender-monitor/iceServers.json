@@ -1,4 +1,4 @@
-[
+module.exports = [
     {
         "urls": "stun:stun.l.google.com:19302"
     },
@@ -25,4 +25,4 @@
         "username": "dc6707c0bdabae99498a0570",
         "credential": "t0a8EBJnJrZjLTV/"
     }
-]
+];

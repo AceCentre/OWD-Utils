@@ -13,19 +13,32 @@ const logFilePath = path.join(app.getPath("userData"), "log.txt");
 
 function createQRWindow(url) {
     if (qrWindow) {
-        qrWindow.close(); // Close existing window if it’s already open
+        qrWindow.close();
     }
 
+    // Increase the window size a bit to avoid scrollbars and add room for a close button.
     qrWindow = new BrowserWindow({
-        width: 200,
-        height: 200,
-        frame: false,
+        width: 220,
+        height: 240,
+        frame: false,       // Remove the frame for a clean look
         alwaysOnTop: true,
         resizable: false,
-        show: false
+        show: false,
+        webPreferences: {
+            contextIsolation: true,
+        }
     });
 
-    qrWindow.loadURL(`data:text/html,<img src="${url}" width="200" height="200">`);
+    // HTML with the QR code image and a close button
+    const htmlContent = `
+        <html>
+            <body style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0;">
+                <button onclick="window.close()" style="position: absolute; top: 10px; right: 10px; padding: 2px 6px; cursor: pointer;">✖</button>
+                <img src="${url}" width="200" height="200" style="display: block; margin-top: 20px;" />
+            </body>
+        </html>`;
+
+    qrWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`);
     qrWindow.show();
 }
 

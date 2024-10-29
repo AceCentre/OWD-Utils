@@ -11,6 +11,8 @@ let lastText = "";
 let isConnected = false;
 
 const logFilePath = path.join(app.getPath("userData"), "log.txt");
+const configFilePath = path.join(__dirname, "config.json");
+
 
 function getIconPath(iconName) {
     return app.isPackaged ? path.join(process.resourcesPath, iconName) : path.join(__dirname, iconName);
@@ -60,6 +62,11 @@ app.on("ready", () => {
 
     const contextMenu = Menu.buildFromTemplate([
         { label: "Open Log Directory", click: () => shell.showItemInFolder(logFilePath) },
+        {
+            label: "Open Config",
+            click: () => shell.openPath(configFilePath)
+                .catch(err => console.error("Failed to open config file:", err))
+        },
         { label: "Copy Session ID", click: () => clipboard.writeText(sessionId) },
         { type: "separator" },
         { label: "Quit", click: () => app.quit() }

@@ -16,23 +16,10 @@
             "webrtc.js",
             "icon.png",
             "node_modules/**/*",
-            {
-                "from": "icon-connected.png",
-                "to": "icon-connected.png",
-                "filter": [
-                    "**/*"
-                ]
-            },
-            {
-                "from": "icon-disconnected.png",
-                "to": "icon-disconnected.png",
-                "filter": [
-                    "**/*"
-                ]
-            }
+            "assets/**/*"
         ],
         "asarUnpack": [
-            "**/*.png"
+            "assets/**/*.png"
         ],
         "directories": {
             "output": "dist"
@@ -51,7 +38,7 @@
         "wrtc": "^0.4.7"
     },
     "devDependencies": {
-        "electron": "^33.0.2",
+        "electron": "^25.0.0",
         "electron-builder": "^25.1.8"
     }
 }

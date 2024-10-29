@@ -13,6 +13,7 @@ let lastText = "";
 let isConnected = false;
 
 const logFilePath = path.join(app.getPath("userData"), "log.txt");
+const configFilePath = path.join(__dirname, "config.json");
 
 ipcMain.on("close-qr-window", () => {
     if (qrWindow) {
@@ -145,6 +146,11 @@ app.on("ready", () => {
                 {
                     label: "Open Log Directory",
                     click: () => shell.showItemInFolder(logFilePath),
+                },
+                {
+                    label: "Open Config",
+                    click: () => shell.openPath(configFilePath)
+                        .catch(err => console.error("Failed to open config file:", err))
                 },
                 {
                     label: "Copy Session ID",

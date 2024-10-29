@@ -40,9 +40,10 @@
     },
     "dependencies": {
         "@faker-js/faker": "^9.1.0",
+        "electron": "^33.0.2",
+        "qrcode": "^1.5.4",
         "socket.io-client": "^4.8.1",
-        "wrtc": "^0.4.7",
-        "electron": "^33.0.2"
+        "wrtc": "^0.4.7"
     },
     "devDependencies": {
         "electron-builder": "^25.1.8"

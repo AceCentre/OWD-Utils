@@ -27,6 +27,11 @@ jobs:
           cd nodejs/sender-monitor
           npm install
 
+      - name: Rebuild Native Modules for Electron
+        run: |
+          cd nodejs/sender-monitor
+          npm run rebuild
+          
       - name: Build Electron App
         run: |
           cd nodejs/sender-monitor

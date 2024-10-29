@@ -6,7 +6,8 @@
     "main": "main.js",
     "scripts": {
         "start": "electron .",
-        "package": "electron-builder"
+        "rebuild": "electron-rebuild -f -w wrtc",
+        "package": "electron-builder && npm run rebuild"
     },
     "build": {
         "appId": "uk.org.acecentre.clipboardowd",
@@ -52,10 +53,10 @@
         "qrcode": "^1.5.4",
         "socket.io-client": "^4.8.1",
         "tesseract.js": "^5.1.1",
-        "wrtc": "^0.4.7"
+        "wrtc": "^0.4.7",
+        "@mapbox/node-pre-gyp": "^1.0.11"
     },
     "devDependencies": {
-        "@mapbox/node-pre-gyp": "^1.0.11",
         "electron": "^33.0.2",
         "electron-builder": "^25.1.8"
     }

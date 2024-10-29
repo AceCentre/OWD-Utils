@@ -6,8 +6,7 @@
     "main": "main.js",
     "scripts": {
         "start": "electron .",
-        "rebuild": "electron-rebuild -f -w wrtc",
-        "package": "electron-builder && npm run rebuild"
+        "package": "electron-builder"
     },
     "build": {
         "appId": "uk.org.acecentre.clipboardowd",
@@ -57,7 +56,7 @@
         "@mapbox/node-pre-gyp": "^1.0.11"
     },
     "devDependencies": {
-        "electron": "^33.0.2",
+        "electron": "^32.0.0",
         "electron-builder": "^25.1.8"
     }
 }

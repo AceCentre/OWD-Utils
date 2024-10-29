@@ -1,4 +1,4 @@
-const { app, Tray, Menu, shell, clipboard } = require("electron");
+const { app, Tray, Menu, shell, clipboard, BrowserWindow } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const webrtc = require("./webrtc");

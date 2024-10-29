@@ -2,12 +2,32 @@ const { app, Tray, Menu, shell, clipboard } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const webrtc = require("./webrtc");
+const QRCode = require("qrcode");
 
 let tray;
+let qrWindow;
 let lastText = "";
 let isConnected = false;
 
 const logFilePath = path.join(app.getPath("userData"), "log.txt");
+
+function createQRWindow(url) {
+    if (qrWindow) {
+        qrWindow.close(); // Close existing window if it’s already open
+    }
+
+    qrWindow = new BrowserWindow({
+        width: 200,
+        height: 200,
+        frame: false,
+        alwaysOnTop: true,
+        resizable: false,
+        show: false
+    });
+
+    qrWindow.loadURL(`data:text/html,<img src="${url}" width="200" height="200">`);
+    qrWindow.show();
+}
 
 function getIconPath(iconName) {
     if (app.isPackaged) {
@@ -31,7 +51,7 @@ function updateTrayIcon() {
         ? getIconPath("icon-connected.png")
         : getIconPath("icon-disconnected.png");
     logMessage(`Trying to load icon from path: ${iconPath}`);
-    
+
     try {
         tray.setImage(iconPath);
     } catch (error) {
@@ -41,37 +61,38 @@ function updateTrayIcon() {
 
 
 app.on("ready", () => {
-    // Log start of the session
     logMessage("App started");
-    // Generate a session ID and start the WebRTC connection
+
     const sessionId = webrtc.startSession();
     logMessage(`Session ID: ${sessionId}`);
+    const displayAppURL = `https://owd.acecentre.net/?senderId=${sessionId}`;
 
-    // Set up system tray icon initially as disconnected
     tray = new Tray(getIconPath("icon-disconnected.png"));
     tray.setToolTip(`Session ID: ${sessionId}`);
 
-    // Add context menu with options
-    const contextMenu = Menu.buildFromTemplate([
-        {
-            label: "Open Log Directory",
-            click: () => {
-                shell.showItemInFolder(logFilePath); // Opens the log file directory
-            }
-        },
-        {
-            label: "Copy Session ID",
-            click: () => {
-                clipboard.writeText(sessionId); // Copies the session ID to clipboard
-                logMessage("Session ID copied to clipboard");
-            }
-        },
-        { type: "separator" },
-        { label: "Quit", click: () => app.quit() },
-    ]);
-    tray.setContextMenu(contextMenu);
+    QRCode.toDataURL(displayAppURL, (err, url) => {
+        if (err) console.error("Failed to generate QR code:", err);
+        else {
+            const contextMenu = Menu.buildFromTemplate([
+                { label: "Show QR Code", click: () => createQRWindow(url) },
+                {
+                    label: "Open Log Directory",
+                    click: () => shell.showItemInFolder(logFilePath),
+                },
+                {
+                    label: "Copy Session ID",
+                    click: () => {
+                        clipboard.writeText(sessionId);
+                        logMessage("Session ID copied to clipboard");
+                    },
+                },
+                { type: "separator" },
+                { label: "Quit", click: () => app.quit() },
+            ]);
+            tray.setContextMenu(contextMenu);
+        }
+    });
 
-    // Listen for WebRTC connection changes
     webrtc.on("connected", () => {
         isConnected = true;
         updateTrayIcon();
@@ -84,7 +105,6 @@ app.on("ready", () => {
         logMessage("Disconnected from WebRTC peer");
     });
 
-    // Monitor the clipboard for text changes every second
     setInterval(() => {
         const currentText = clipboard.readText();
         if (currentText && currentText !== lastText) {

@@ -41,7 +41,7 @@ class WebRTCConnection extends EventEmitter {
         this.socket.on("peerJoined", async (data) => {
             try {
                 const peerId = data.peerId;
-                const peerConnection = RTCPeerConnection({ iceServers });
+                const peerConnection = new RTCPeerConnection({ iceServers });
 
                 this.peerConnections[peerId] = peerConnection;
 

@@ -105,6 +105,29 @@ class WebRTCConnection extends EventEmitter {
             }
         });
     }
+
+    closeConnection() {
+        Object.values(this.peerConnections).forEach((peerConnection) => {
+            peerConnection.close();
+        });
+        Object.values(this.dataChannels).forEach((dataChannel) => {
+            if (dataChannel.readyState !== "closed") {
+                dataChannel.close();
+            }
+        });
+
+        // Clear the connection objects
+        this.peerConnections = {};
+        this.dataChannels = {};
+
+        // Disconnect the WebSocket connection
+        if (this.socket.connected) {
+            this.socket.disconnect();
+        }
+
+        this.emit("disconnected");
+        console.log("WebRTC connection closed.");
+    }
 }
 
 module.exports = new WebRTCConnection();

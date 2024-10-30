@@ -262,9 +262,13 @@ app.on("before-quit", async () => {
         }
     }
 
-    if (webrtc.isConnected()) {
-        webrtc.closeConnection();
-        logMessage("WebRTC connection closed.");
+    if (webrtc.connected) {  // Replace `connected` with the correct property or method if different
+        try {
+            await webrtc.closeConnection();  // Make sure closeConnection is a Promise, or remove `await`
+            logMessage("WebRTC connection closed.");
+        } catch (error) {
+            logMessage(`Failed to close WebRTC connection: ${error.message}`);
+        }
     }
 
     const tempFilePath = path.join(app.getPath("temp"), "ocr-capture.png");

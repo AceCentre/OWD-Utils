@@ -13,6 +13,8 @@ let isConnected = false;
 let retryAttempts = 0;
 let sessionId;
 let displayAppURL;
+let clipboardMonitorInterval;
+let ocrMonitorInterval;
 const maxRetries = 10;
 const retryInterval = 3000;
 
@@ -226,12 +228,12 @@ app.on("ready", () => {
 
     // Clipboard monitoring
     if (config.monitorMode === "clipboard") {
-        setInterval(() => {
+        clipboardMonitorInterval = setInterval(() => {
             const currentText = clipboard.readText();
             processAndSendText(currentText);
         }, config.captureInterval);
     } else if (config.monitorMode === "ocr") {
-        setInterval(async () => {
+        ocrMonitorInterval = setInterval(async () => {
             const recognizedText = await captureAndProcessScreen();
             processAndSendText(recognizedText);
         }, config.captureInterval);
@@ -243,6 +245,48 @@ function updateConnectionStatus(connected) {
     updateTrayIcon();
     updateTrayMenu();
 }
+
+
+app.on("before-quit", async () => {
+    logMessage("App quitting...");
+
+    // Terminate any OCR process if in progress
+    if (config.monitorMode === "ocr") {
+        if (performOCR.terminate) {
+            try {
+                await performOCR.terminate();
+                logMessage("OCR worker terminated.");
+            } catch (error) {
+                logMessage(`Failed to terminate OCR worker: ${error.message}`);
+            }
+        }
+    }
+
+    if (webrtc.isConnected()) {
+        webrtc.closeConnection();
+        logMessage("WebRTC connection closed.");
+    }
+
+    const tempFilePath = path.join(app.getPath("temp"), "ocr-capture.png");
+    if (fs.existsSync(tempFilePath)) {
+        try {
+            fs.unlinkSync(tempFilePath);
+            logMessage("Temporary OCR file cleaned up.");
+        } catch (error) {
+            logMessage(`Failed to delete temp OCR file: ${error.message}`);
+        }
+    }
+
+    // Clear intervals if they are set
+    if (clipboardMonitorInterval) {
+        clearInterval(clipboardMonitorInterval);
+        logMessage("Clipboard monitoring interval cleared.");
+    }
+    if (ocrMonitorInterval) {
+        clearInterval(ocrMonitorInterval);
+        logMessage("OCR monitoring interval cleared.");
+    }
+});
 
 app.on("window-all-closed", (e) => {
     e.preventDefault();

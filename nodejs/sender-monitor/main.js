@@ -11,6 +11,8 @@ let qrWindow;
 let lastText = "";
 let isConnected = false;
 let retryAttempts = 0;
+let sessionId;
+let displayAppURL;
 const maxRetries = 10;
 const retryInterval = 3000;
 
@@ -134,17 +136,20 @@ function updateTrayIcon() {
     }
 }
 
+function manualReconnect() {
+    retryAttempts = 0;
+    logMessage("Manual reconnect initiated from taskbar.");
+    attemptConnection();
+}
 
 function attemptConnection() {
     retryAttempts++;
     console.log(`Attempting to reconnect (${retryAttempts}/${maxRetries})...`);
 
-    const sessionId = webrtc.startSession();
-
     // Attach the event listener for connection success only once
     webrtc.once("connected", () => {
         isConnected = true;
-        updateTrayIcon();
+        updateConnectionStatus(true);
         logMessage("Reconnected to WebRTC peer");
         retryAttempts = 0; // Reset retry attempts
     });
@@ -152,7 +157,7 @@ function attemptConnection() {
     // Attach the event listener for disconnection only once
     webrtc.once("disconnected", () => {
         isConnected = false;
-        updateTrayIcon();
+        updateConnectionStatus(false)
         logMessage("Disconnected from WebRTC peer");
 
         // Retry connection if attempts are available
@@ -165,12 +170,42 @@ function attemptConnection() {
     });
 }
 
+function updateTrayMenu() {
+    const contextMenu = Menu.buildFromTemplate([
+        { label: "Show QR Code", click: () => createQRWindow(displayAppURL) },
+        {
+            label: "Reconnect",
+            click: manualReconnect,
+            enabled: !isConnected, // Disable the option if connected
+        },
+        {
+            label: "Open Log Directory",
+            click: () => shell.showItemInFolder(logFilePath),
+        },
+        {
+            label: "Open Config",
+            click: () => shell.openPath(configFilePath)
+                .catch(err => console.error("Failed to open config file:", err))
+        },
+        {
+            label: "Copy Session ID",
+            click: () => {
+                clipboard.writeText(sessionId);
+                logMessage("Session ID copied to clipboard");
+            },
+        },
+        { type: "separator" },
+        { label: "Quit", click: () => app.quit() },
+    ]);
+    tray.setContextMenu(contextMenu);
+}
+
 app.on("ready", () => {
     logMessage("App started");
 
-    const sessionId = webrtc.startSession();
+    sessionId = webrtc.startSession();
     logMessage(`Session ID: ${sessionId}`);
-    const displayAppURL = `https://owd.acecentre.net/?sessionId=${sessionId}`;
+    displayAppURL = `https://owd.acecentre.net/?sessionId=${sessionId}`;
 
     tray = new Tray(getIconPath("icon-disconnected.png"));
     tray.setToolTip(`Session ID: ${sessionId}`);
@@ -183,30 +218,8 @@ app.on("ready", () => {
             createQRWindow(url);
 
             // Set up tray context menu with the QR option and other options
-            const contextMenu = Menu.buildFromTemplate([
-                { label: "Show QR Code", click: () => createQRWindow(url) },
-                {
-                    label: "Open Log Directory",
-                    click: () => shell.showItemInFolder(logFilePath),
-                },
-                {
-                    label: "Open Config",
-                    click: () => shell.openPath(configFilePath)
-                        .catch(err => console.error("Failed to open config file:", err))
-                },
-                {
-                    label: "Copy Session ID",
-                    click: () => {
-                        clipboard.writeText(sessionId);
-                        logMessage("Session ID copied to clipboard");
-                    },
-                },
-                { type: "separator" },
-                { label: "Quit", click: () => app.quit() },
-            ]);
-            tray.setContextMenu(contextMenu);
-        }
-    });
+            updateTrayMenu();
+        });
 
     attemptConnection();
 
@@ -224,6 +237,11 @@ app.on("ready", () => {
     }
 });
 
+function updateConnectionStatus(connected) {
+    isConnected = connected;
+    updateTrayIcon();
+    updateTrayMenu();
+}
 
 app.on("window-all-closed", (e) => {
     e.preventDefault();

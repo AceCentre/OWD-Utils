@@ -1,9 +1,11 @@
 const edge = require("electron-edge-js");
 const Tesseract = require("tesseract.js");
 const path = require("path");
+const { app } = require("electron");
 
 const libsPath = app.isPackaged ? path.join(process.resourcesPath, "libs") : path.join(__dirname, "libs");
 
+console.log("Using DLL path:", path.join(libsPath, "System.Runtime.dll"));
 
 const ocrImageEdge = edge.func({
     source: function () {/*
@@ -41,6 +43,7 @@ const ocrImageEdge = edge.func({
         path.join(libsPath, "Windows.winmd")
     ]
 });
+
 
 // Main OCR function that switches based on config
 async function performOCR(filePath, useEdgeForOCR) {

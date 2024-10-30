@@ -25,6 +25,8 @@
             "main.js",
             "webrtc.js",
             "ocr.js",
+            "iceServers.js",
+            "preload.js",
             "config.json",
             "libs/**/*",
             "icon.png",

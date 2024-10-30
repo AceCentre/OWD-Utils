@@ -86,19 +86,28 @@ async function captureAndProcessScreen() {
         const croppedImage = await fullImage.crop(x, y, width, height);
 
         const filePath = path.join(app.getPath("temp"), "ocr-capture.png");
+
+        // Write the cropped image to the temp path and ensure it exists
         fs.writeFileSync(filePath, await croppedImage.toPng());
+        if (!fs.existsSync(filePath)) {
+            console.error("Image file not created as expected at", filePath);
+            return ""; // Exit early if file creation failed
+        }
 
         const recognizedText = await performOCR(filePath, useEdgeForOCR);
+        console.log("OCR completed, recognized text:", recognizedText);
 
-        fs.unlinkSync(filePath);  // Clean up temp file
-
+        // Clean up the temp file only after OCR completes
+        fs.unlinkSync(filePath);
         return recognizedText || ""; // Return the OCR text or an empty string
+
     } catch (error) {
         console.error("Screen capture or OCR failed:", error);
         logMessage("Error during screen capture or OCR");
         return "";
     }
 }
+
 
 function processAndSendText(text) {
     if (text && text !== lastText) {

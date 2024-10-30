@@ -5,15 +5,23 @@ const webrtc = require("./webrtc");
 const QRCode = require("qrcode");
 const { Monitor } = require("node-screenshots");
 const { performOCR } = require("./ocr");
-const config = require("./config.json");
 
 let tray;
 let qrWindow;
 let lastText = "";
 let isConnected = false;
-
 const logFilePath = path.join(app.getPath("userData"), "log.txt");
-const configFilePath = path.join(__dirname, "config.json");
+
+const configFilePath = app.isPackaged
+    ? path.join(app.getPath("userData"), "config.json")
+    : path.join(__dirname, "config.json");
+
+if (app.isPackaged && !fs.existsSync(configFilePath)) {
+    fs.copyFileSync(path.join(__dirname, "config.json"), configFilePath);
+}
+
+let config = JSON.parse(fs.readFileSync(configFilePath, "utf-8"));
+
 
 ipcMain.on("close-qr-window", () => {
     if (qrWindow) {

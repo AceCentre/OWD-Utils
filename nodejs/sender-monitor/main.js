@@ -219,7 +219,8 @@ app.on("ready", () => {
 
             // Set up tray context menu with the QR option and other options
             updateTrayMenu();
-        });
+        }
+    });
 
     attemptConnection();
 

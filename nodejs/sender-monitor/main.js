@@ -10,6 +10,10 @@ let tray;
 let qrWindow;
 let lastText = "";
 let isConnected = false;
+let retryAttempts = 0;
+const maxRetries = 10;
+const retryInterval = 3000;
+
 const logFilePath = path.join(app.getPath("userData"), "log.txt");
 
 const configFilePath = app.isPackaged
@@ -131,6 +135,36 @@ function updateTrayIcon() {
 }
 
 
+function attemptConnection() {
+    retryAttempts++;
+    console.log(`Attempting to reconnect (${retryAttempts}/${maxRetries})...`);
+
+    const sessionId = webrtc.startSession();
+
+    // Attach the event listener for connection success only once
+    webrtc.once("connected", () => {
+        isConnected = true;
+        updateTrayIcon();
+        logMessage("Reconnected to WebRTC peer");
+        retryAttempts = 0; // Reset retry attempts
+    });
+
+    // Attach the event listener for disconnection only once
+    webrtc.once("disconnected", () => {
+        isConnected = false;
+        updateTrayIcon();
+        logMessage("Disconnected from WebRTC peer");
+
+        // Retry connection if attempts are available
+        if (retryAttempts < maxRetries) {
+            setTimeout(attemptConnection, retryInterval);
+        } else {
+            console.error("Max retries reached. Could not reconnect to peer.");
+            logMessage("Max retries reached. Could not reconnect to peer.");
+        }
+    });
+}
+
 app.on("ready", () => {
     logMessage("App started");
 
@@ -174,18 +208,7 @@ app.on("ready", () => {
         }
     });
 
-    // WebRTC connection events
-    webrtc.on("connected", () => {
-        isConnected = true;
-        updateTrayIcon();
-        logMessage("Connected to WebRTC peer");
-    });
-
-    webrtc.on("disconnected", () => {
-        isConnected = false;
-        updateTrayIcon();
-        logMessage("Disconnected from WebRTC peer");
-    });
+    attemptConnection();
 
     // Clipboard monitoring
     if (config.monitorMode === "clipboard") {

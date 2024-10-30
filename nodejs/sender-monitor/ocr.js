@@ -2,6 +2,9 @@ const edge = require("electron-edge-js");
 const Tesseract = require("tesseract.js");
 const path = require("path");
 
+const libsPath = app.isPackaged ? path.join(process.resourcesPath, "libs") : path.join(__dirname, "libs");
+
+
 const ocrImageEdge = edge.func({
     source: function () {/*
         using System;
@@ -32,10 +35,10 @@ const ocrImageEdge = edge.func({
         }
     */},
     references: [
-        "System.Runtime.dll",
-        "System.Threading.Tasks.dll",
-        path.join(__dirname, "libs/System.Runtime.WindowsRuntime.dll"),
-        path.join(__dirname, "libs/Windows.winmd")
+        path.join(libsPath, "System.Runtime.dll"),
+        path.join(libsPath, "System.Threading.Tasks.dll"),
+        path.join(libsPath, "System.Runtime.WindowsRuntime.dll"),
+        path.join(libsPath, "Windows.winmd")
     ]
 });
 

@@ -34,7 +34,9 @@
             "assets/**/*"
         ],
         "asarUnpack": [
-            "**/*.png"
+            "**/*.png",
+            "libs/**/*.dll",
+            "libs/**/*.winmd"
         ],
         "directories": {
             "output": "dist"

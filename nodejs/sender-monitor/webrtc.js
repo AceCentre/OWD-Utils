@@ -60,6 +60,9 @@ class WebRTCConnection extends EventEmitter {
 
                 dataChannel.onopen = () => {
                     this.emit("connected"); // Emit connected event when data channel is open
+                    const channelConnectedMessage = JSON.stringify({ type: "CHANNEL_CONNECTED" });
+                    dataChannel.send(channelConnectedMessage);
+                    console.log("Sent CHANNEL_CONNECTED message to display.");
                 };
 
                 dataChannel.onclose = () => {

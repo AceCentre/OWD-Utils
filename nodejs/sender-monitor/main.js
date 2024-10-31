@@ -5,6 +5,7 @@ const webrtc = require("./webrtc");
 const QRCode = require("qrcode");
 const { Monitor } = require("node-screenshots");
 const { performOCR } = require("./ocr");
+const { Translator } = require("google-translate-api-x");
 
 let tray;
 let qrWindow;
@@ -108,9 +109,27 @@ async function captureAndProcessScreen() {
     }
 }
 
+const translator = new Translator({
+    from: config.translation.sourceLang,
+    to: config.translation.targetLang,
+    autoCorrect: config.translation.autoCorrect,
+    forceBatch: false,
+    tld: "com",
+});
 
-function processAndSendText(text) {
+async function processAndSendText(text) {
     if (text && text !== lastText && isConnected && webrtc.isChannelOpen()) {
+        if (config.translation.enabled) {
+            try {
+                const translated = await translator.translate(text);
+                text = translated.text; // Update text with the translated version
+                console.log(`Translated text: ${text}`);
+            } catch (error) {
+                console.error("Translation error:", error);
+            }
+        }
+
+        // Send the (translated or original) text to the display
         webrtc.sendMessage(text);
         lastText = text;
         console.log(`Text sent to display: ${text}`);

@@ -112,7 +112,7 @@ async function captureAndProcessScreen() {
 function processAndSendText(text) {
     if (text && text !== lastText && isConnected && webrtc.isChannelOpen()) {
         webrtc.sendMessage(JSON.stringify({
-            type: messageTypes.MESSAGE,
+            type: "MESSAGE",
             content: text,
         }));
         lastText = text;

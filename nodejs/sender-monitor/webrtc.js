@@ -59,7 +59,7 @@ class WebRTCConnection extends EventEmitter {
                 this.dataChannels[peerId] = dataChannel;
 
                 dataChannel.onopen = () => {
-                    this.emit("connected"); // Emit connected event when data channel is open
+                    this.emit("connected");
                     const channelConnectedMessage = JSON.stringify({ type: "CHANNEL_CONNECTED" });
                     dataChannel.send(channelConnectedMessage);
                     console.log("Sent CHANNEL_CONNECTED message to display.");
@@ -107,6 +107,10 @@ class WebRTCConnection extends EventEmitter {
                 channel.send(message);
             }
         });
+    }
+
+    isChannelOpen() {
+        return Object.values(this.dataChannels).some(channel => channel.readyState === "open");
     }
 
     closeConnection() {

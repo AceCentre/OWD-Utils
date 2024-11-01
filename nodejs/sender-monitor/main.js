@@ -167,7 +167,7 @@ async function captureAndProcessScreen() {
             console.error("Image capture failed.");
             return "";
         }
-        
+
         // Crop the image to the specified capture area
         const croppedImage = await fullImage.crop(x, y, width, height);
         if (!croppedImage) {
@@ -177,7 +177,8 @@ async function captureAndProcessScreen() {
 
         // Write the cropped image to the temp path
         const imageBuffer = await croppedImage.toPng();
-        fs.writeFileSync(filePath, imageBuffer);
+        await fs.promises.writeFile(filePath, imageBuffer);
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         // Confirm file existence
         if (!fs.existsSync(filePath)) {

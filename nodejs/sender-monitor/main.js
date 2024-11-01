@@ -136,6 +136,11 @@ function reloadConfig() {
             logMessage("Switched to OCR monitoring mode.");
         }
 
+        // Update translation settings based on the reloaded config
+        const isTranslationEnabled = config.translation?.enabled || false;
+        console.log(`Translation enabled: ${isTranslationEnabled}`);
+        logMessage(`Translation enabled: ${isTranslationEnabled}`);
+
     } catch (error) {
         console.error("Failed to reload config:", error);
         logMessage("Failed to reload config.");

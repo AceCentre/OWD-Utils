@@ -149,7 +149,8 @@ function reloadConfig() {
 
 // Capture and OCR function with return of recognized text
 async function captureAndProcessScreen() {
-    const { x, y, width, height, useEdgeForOCR } = config.captureArea;
+    const { x, y, width, height } = config.captureArea;
+    const useEdgeForOCR = config.useEdgeForOCR;
 
     try {
         const monitor = Monitor.all().find(m => m.isPrimary);

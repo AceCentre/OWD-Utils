@@ -52,7 +52,6 @@ function createOverlayWindow() {
     });
 
     overlayWindow.loadURL(`file://${__dirname}/overlay.html`);
-    overlayWindow.webContents.openDevTools(); // Open DevTools for debugging
     overlayWindow.on("closed", () => {
         overlayWindow = null;
     });

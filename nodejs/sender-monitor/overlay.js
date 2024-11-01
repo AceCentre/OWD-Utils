@@ -3,27 +3,31 @@ const { ipcRenderer } = require("electron");
 const canvas = document.getElementById("selectionCanvas");
 const ctx = canvas.getContext("2d");
 
-// Ensure canvas dimensions match the window size
+// Set canvas dimensions to match the window
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
 let startX, startY, isDrawing = false;
 
+// Logging function for debugging
+function logMessage(message) {
+    console.log(`[Overlay] ${message}`);
+}
+
 canvas.addEventListener("mousedown", (e) => {
-    // Start drawing
+    logMessage("Mouse down event detected.");
     startX = e.clientX;
     startY = e.clientY;
     isDrawing = true;
 });
 
 canvas.addEventListener("mousemove", (e) => {
-    // Only draw if the mouse is pressed down
     if (!isDrawing) return;
+    logMessage(`Mouse move: ${e.clientX}, ${e.clientY}`);
 
-    // Clear the canvas before redrawing the rectangle
+    // Clear the canvas before drawing a new rectangle
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Calculate width and height from start to current mouse position
     const width = e.clientX - startX;
     const height = e.clientY - startY;
 
@@ -34,23 +38,24 @@ canvas.addEventListener("mousemove", (e) => {
 });
 
 canvas.addEventListener("mouseup", (e) => {
-    // Stop drawing
+    logMessage("Mouse up event detected.");
     if (!isDrawing) return;
     isDrawing = false;
 
-    // Finalize width and height calculations
     const width = e.clientX - startX;
     const height = e.clientY - startY;
 
+    // Log the final rectangle coordinates for debugging
+    logMessage(`Final rectangle: x=${startX}, y=${startY}, width=${width}, height=${height}`);
+
     // Send the coordinates to the main process
     ipcRenderer.send("set-ocr-boundaries", { x: startX, y: startY, width, height });
-
-    // Close the window after drawing is complete
     window.close();
 });
 
-// Resize the canvas to keep it fullscreen if the window resizes
+// Ensure the canvas resizes correctly if the window size changes
 window.addEventListener("resize", () => {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
+    logMessage("Canvas resized to fit window.");
 });

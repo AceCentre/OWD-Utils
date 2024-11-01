@@ -39,7 +39,7 @@ ipcMain.on("close-qr-window", () => {
 });
 
 function createOverlayWindow() {
-    let overlayWindow = new BrowserWindow({  // Changed from const to let
+    let overlayWindow = new BrowserWindow({
         fullscreen: true,
         frame: false,
         transparent: true,
@@ -52,6 +52,7 @@ function createOverlayWindow() {
     });
 
     overlayWindow.loadURL(`file://${__dirname}/overlay.html`);
+    overlayWindow.webContents.openDevTools(); // Open DevTools for debugging
     overlayWindow.on("closed", () => {
         overlayWindow = null;
     });

@@ -58,6 +58,29 @@ const ocrImageEdge = edge.func({
 
 
 // Main OCR function that switches based on config
+async function performOCR(filePath, useEdgeForOCR) {
+    console.log("performOCR called with useEdgeForOCR:", useEdgeForOCR);
+
+    if (useEdgeForOCR) {
+        try {
+            const text = await ocrImageEdge(filePath);
+            console.log("Recognized text (Windows.Media.Ocr):", text);
+            return text || ""; // Return text or an empty string if text is undefined
+        } catch (error) {
+            console.error("Windows.Media.Ocr failed:", error);
+            return null;
+        }
+    } else {
+        try {
+            const { data: { text } } = await Tesseract.recognize(filePath, "eng");
+            console.log("Recognized text (Tesseract.js):", text);
+            return text;
+        } catch (error) {
+            console.error("Tesseract.js OCR failed:", error);
+            return null;
+        }
+    }
+}
 
 module.exports = {
     performOCR

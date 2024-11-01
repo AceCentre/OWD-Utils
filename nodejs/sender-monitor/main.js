@@ -110,26 +110,25 @@ async function captureAndProcessScreen() {
 }
 
 const translator = new Translator({
-    from: config.translation.sourceLang,
-    to: config.translation.targetLang,
-    autoCorrect: config.translation.autoCorrect,
+    from: config.translation?.sourceLang || "en",
+    to: config.translation?.targetLang || "es",
+    autoCorrect: config.translation?.autoCorrect || false,
     forceBatch: false,
     tld: "com",
 });
 
 async function processAndSendText(text) {
     if (text && text !== lastText && isConnected && webrtc.isChannelOpen()) {
-        if (config.translation.enabled) {
+        if (config.translation?.enabled || false) {
             try {
                 const translated = await translator.translate(text);
-                text = translated.text; // Update text with the translated version
+                text = translated.text;
                 console.log(`Translated text: ${text}`);
             } catch (error) {
                 console.error("Translation error:", error);
             }
         }
 
-        // Send the (translated or original) text to the display
         webrtc.sendMessage(text);
         lastText = text;
         console.log(`Text sent to display: ${text}`);

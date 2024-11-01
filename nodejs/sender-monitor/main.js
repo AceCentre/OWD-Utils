@@ -217,7 +217,13 @@ function attemptConnection() {
 
 function updateTrayMenu() {
     const contextMenu = Menu.buildFromTemplate([
-        { label: "Show QR Code", click: () => createQRWindow(displayAppURL) },
+        {
+            label: "Show QR Code",
+            click: async () => {
+                const qrDataUrl = await QRCode.toDataURL(displayAppURL); // Generate a fresh QR code
+                createQRWindow(qrDataUrl);
+            }
+        },
         {
             label: "Reconnect",
             click: manualReconnect,

@@ -20,18 +20,35 @@ const ocrImageEdge = edge.func({
         {
             public async Task<object> Invoke(dynamic input)
             {
-                string filePath = (string)input;
-                var storageFile = await StorageFile.GetFileFromPathAsync(filePath);
-
-                using (IRandomAccessStream stream = await storageFile.OpenAsync(FileAccessMode.Read))
+                try
                 {
-                    var decoder = await BitmapDecoder.CreateAsync(stream);
-                    var bitmap = await decoder.GetSoftwareBitmapAsync();
+                    // Load image file from the provided path
+                    string filePath = (string)input;
+                    var storageFile = await StorageFile.GetFileFromPathAsync(filePath);
 
-                    var ocrEngine = OcrEngine.TryCreateFromUserProfileLanguages();
-                    var ocrResult = await ocrEngine.RecognizeAsync(bitmap);
+                    using (IRandomAccessStream stream = await storageFile.OpenAsync(FileAccessMode.Read))
+                    {
+                        var decoder = await BitmapDecoder.CreateAsync(stream);
+                        var bitmap = await decoder.GetSoftwareBitmapAsync();
 
-                    return ocrResult.Text;
+                        // Check if bitmap was successfully created
+                        if (bitmap == null) return "Bitmap loading failed";
+
+                        // Create OCR engine and ensure it was initialized
+                        var ocrEngine = OcrEngine.TryCreateFromUserProfileLanguages();
+                        if (ocrEngine == null) return "OCR Engine creation failed";
+
+                        // Perform OCR and check if result is valid
+                        var ocrResult = await ocrEngine.RecognizeAsync(bitmap);
+                        if (ocrResult == null || ocrResult.Text == null) return "OCR result is empty or null";
+
+                        return ocrResult.Text;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Return any exception message for debugging
+                    return $"Error: {ex.Message}";
                 }
             }
         }
@@ -47,13 +64,13 @@ const ocrImageEdge = edge.func({
 
 // Main OCR function that switches based on config
 async function performOCR(filePath, useEdgeForOCR) {
-    console.log("performOCR called with useEdgeForOCR:", useEdgeForOCR); // Debug log
+    console.log("performOCR called with useEdgeForOCR:", useEdgeForOCR);
 
     if (useEdgeForOCR) {
         try {
             const text = await ocrImageEdge(filePath);
             console.log("Recognized text (Windows.Media.Ocr):", text);
-            return text;
+            return text || ""; // Return text or an empty string if text is undefined
         } catch (error) {
             console.error("Windows.Media.Ocr failed:", error);
             return null;

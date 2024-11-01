@@ -91,33 +91,62 @@ function reloadConfig() {
 
 // Capture and OCR function with return of recognized text
 async function captureAndProcessScreen() {
-    const { x, y, width, height, useEdgeForOCR } = config.captureArea;
+    const { x, y, width, height } = config.captureArea;
+    const useEdgeForOCR = config.useEdgeForOCR;
+
+    const filePath = path.join(app.getPath("temp"), "ocr-capture.png");
 
     try {
         const monitor = Monitor.all().find(m => m.isPrimary);
+        if (!monitor) {
+            console.error("No primary monitor found.");
+            return "";
+        }
+
+        // Capture the full image
         const fullImage = await monitor.captureImage();
+        if (!fullImage) {
+            console.error("Image capture failed.");
+            return "";
+        }
+        
+        // Crop the image to the specified capture area
         const croppedImage = await fullImage.crop(x, y, width, height);
+        if (!croppedImage) {
+            console.error("Image cropping failed.");
+            return "";
+        }
 
-        const filePath = path.join(app.getPath("temp"), "ocr-capture.png");
+        // Write the cropped image to the temp path
+        const imageBuffer = await croppedImage.toPng();
+        fs.writeFileSync(filePath, imageBuffer);
 
-        // Write the cropped image to the temp path and ensure it exists
-        fs.writeFileSync(filePath, await croppedImage.toPng());
+        // Confirm file existence
         if (!fs.existsSync(filePath)) {
-            console.error("Image file not created as expected at", filePath);
+            console.error("File does not exist at", filePath);
             return ""; // Exit early if file creation failed
         }
 
+        console.log("Image successfully saved at", filePath);
+
+        // Call performOCR with the useEdgeForOCR flag
         const recognizedText = await performOCR(filePath, useEdgeForOCR);
+
+        // Log recognized text
         console.log("OCR completed, recognized text:", recognizedText);
 
-        // Clean up the temp file only after OCR completes
-        fs.unlinkSync(filePath);
         return recognizedText || ""; // Return the OCR text or an empty string
 
     } catch (error) {
         console.error("Screen capture or OCR failed:", error);
         logMessage("Error during screen capture or OCR");
         return "";
+    } finally {
+        // Clean up the temp file after everything is done
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+            console.log("Temporary OCR file cleaned up:", filePath);
+        }
     }
 }
 

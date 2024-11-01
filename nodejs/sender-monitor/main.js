@@ -39,7 +39,7 @@ ipcMain.on("close-qr-window", () => {
 });
 
 function createOverlayWindow() {
-    const overlayWindow = new BrowserWindow({
+    let overlayWindow = new BrowserWindow({  // Changed from const to let
         fullscreen: true,
         frame: false,
         transparent: true,
@@ -60,7 +60,7 @@ function createOverlayWindow() {
 ipcMain.on("set-ocr-boundaries", (event, bounds) => {
     config.captureArea = bounds;
     logMessage(`Updated OCR boundaries: ${JSON.stringify(bounds)}`);
-    // Save config if needed, to persist changes
+    // Save updated config if persistence is needed
     fs.writeFileSync(configFilePath, JSON.stringify(config, null, 2), "utf-8");
 });
 

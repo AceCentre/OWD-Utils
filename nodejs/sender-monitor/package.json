@@ -51,14 +51,14 @@
     },
     "dependencies": {
         "@faker-js/faker": "^9.1.0",
+        "@mapbox/node-pre-gyp": "^1.0.11",
         "electron-edge-js": "^33.0.1",
+        "google-translate-api-x": "^10.7.1",
         "node-screenshots": "^0.2.2",
         "qrcode": "^1.5.4",
         "socket.io-client": "^4.8.1",
         "tesseract.js": "^5.1.1",
-        "wrtc": "^0.4.7",
-        "@mapbox/node-pre-gyp": "^1.0.11",
-        "google-translate-api-x": "^10.7.1"
+        "wrtc": "^0.4.7"
     },
     "devDependencies": {
         "electron": "^32.0.0",

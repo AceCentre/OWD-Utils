@@ -9,7 +9,7 @@
     "useEdgeForOCR": true,
     "monitorMode": "clipboard",
     "translation": {
-        "enabled": true,
+        "enabled": false,
         "sourceLang": "en",
         "targetLang": "es",
         "autoCorrect": true

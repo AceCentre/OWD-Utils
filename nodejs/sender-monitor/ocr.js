@@ -22,7 +22,6 @@ const ocrImageEdge = edge.func({
             {
                 try
                 {
-                    // Load image file from the provided path
                     string filePath = (string)input;
                     var storageFile = await StorageFile.GetFileFromPathAsync(filePath);
 
@@ -31,14 +30,11 @@ const ocrImageEdge = edge.func({
                         var decoder = await BitmapDecoder.CreateAsync(stream);
                         var bitmap = await decoder.GetSoftwareBitmapAsync();
 
-                        // Check if bitmap was successfully created
                         if (bitmap == null) return "Bitmap loading failed";
 
-                        // Create OCR engine and ensure it was initialized
                         var ocrEngine = OcrEngine.TryCreateFromUserProfileLanguages();
                         if (ocrEngine == null) return "OCR Engine creation failed";
 
-                        // Perform OCR and check if result is valid
                         var ocrResult = await ocrEngine.RecognizeAsync(bitmap);
                         if (ocrResult == null || ocrResult.Text == null) return "OCR result is empty or null";
 
@@ -47,8 +43,7 @@ const ocrImageEdge = edge.func({
                 }
                 catch (Exception ex)
                 {
-                    // Return any exception message for debugging
-                    return $"Error: {ex.Message}";
+                    return "Error: " + ex.Message;
                 }
             }
         }

@@ -38,10 +38,13 @@ ipcMain.on("close-qr-window", () => {
     }
 });
 
-function createQRWindow(url) {
+async function createQRWindow(url) {
     if (qrWindow) {
         qrWindow.close();
     }
+
+    // Use await to ensure QR code generation completes before moving on
+    const qrDataUrl = await QRCode.toDataURL(url);
 
     qrWindow = new BrowserWindow({
         width: 220,
@@ -52,7 +55,7 @@ function createQRWindow(url) {
         show: false,
         webPreferences: {
             contextIsolation: true,
-            preload: path.join(__dirname, "preload.js"), // Preload script for IPC
+            preload: path.join(__dirname, "preload.js"),
         }
     });
 
@@ -60,7 +63,7 @@ function createQRWindow(url) {
         <html>
             <body style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0;">
                 <button id="closeButton" style="position: absolute; top: 10px; right: 10px; padding: 2px 6px; cursor: pointer;">✖</button>
-                <img src="${url}" width="200" height="200" style="display: block; margin-top: 20px;" />
+                <img src="${qrDataUrl}" width="200" height="200" style="display: block; margin-top: 20px;" />
                 <script>
                     document.getElementById("closeButton").addEventListener("click", () => {
                         window.closeQRWindow();
@@ -73,8 +76,20 @@ function createQRWindow(url) {
     qrWindow.show();
 
     qrWindow.on("closed", () => {
-        qrWindow = null; // Nullify qrWindow when it's closed
+        qrWindow = null;
     });
+}
+
+function reloadConfig() {
+    try {
+        config = JSON.parse(fs.readFileSync(configFilePath, "utf-8"));
+        console.log("Configuration reloaded.");
+        logMessage("Configuration reloaded from config.json.");
+        // You may want to reinitialize any settings here that depend on the config
+    } catch (error) {
+        console.error("Failed to reload config:", error);
+        logMessage("Failed to reload config.");
+    }
 }
 
 // Capture and OCR function with return of recognized text
@@ -216,6 +231,10 @@ function updateTrayMenu() {
             label: "Open Config",
             click: () => shell.openPath(configFilePath)
                 .catch(err => console.error("Failed to open config file:", err))
+        },
+        {
+            label: "Reload Config",
+            click: reloadConfig,
         },
         {
             label: "Copy Session ID",

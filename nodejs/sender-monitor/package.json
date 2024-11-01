@@ -26,6 +26,7 @@
             "webrtc.js",
             "overlay.html",
             "overlay.js",
+            "overlay-preload.js",
             "ocr.js",
             "iceServers.js",
             "preload.js",

@@ -24,6 +24,8 @@
         "files": [
             "main.js",
             "webrtc.js",
+            "overlay.html",
+            "overlay.js",
             "ocr.js",
             "iceServers.js",
             "preload.js",

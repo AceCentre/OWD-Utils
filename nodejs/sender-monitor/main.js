@@ -38,6 +38,32 @@ ipcMain.on("close-qr-window", () => {
     }
 });
 
+function createOverlayWindow() {
+    const overlayWindow = new BrowserWindow({
+        fullscreen: true,
+        frame: false,
+        transparent: true,
+        alwaysOnTop: true,
+        resizable: false,
+        webPreferences: {
+            contextIsolation: true,
+            preload: path.join(__dirname, "overlay-preload.js"),
+        },
+    });
+
+    overlayWindow.loadURL(`file://${__dirname}/overlay.html`);
+    overlayWindow.on("closed", () => {
+        overlayWindow = null;
+    });
+}
+
+ipcMain.on("set-ocr-boundaries", (event, bounds) => {
+    config.captureArea = bounds;
+    logMessage(`Updated OCR boundaries: ${JSON.stringify(bounds)}`);
+    // Save config if needed, to persist changes
+    fs.writeFileSync(configFilePath, JSON.stringify(config, null, 2), "utf-8");
+});
+
 async function createQRWindow(qrDataUrl) {
     if (qrWindow) {
         qrWindow.close();
@@ -237,6 +263,10 @@ function updateTrayMenu() {
             label: "Open Config",
             click: () => shell.openPath(configFilePath)
                 .catch(err => console.error("Failed to open config file:", err))
+        },
+        {
+            label: "Define OCR Area", // New option to define OCR area
+            click: createOverlayWindow,
         },
         {
             label: "Reload Config",

@@ -108,7 +108,34 @@ function reloadConfig() {
         config = JSON.parse(fs.readFileSync(configFilePath, "utf-8"));
         console.log("Configuration reloaded.");
         logMessage("Configuration reloaded from config.json.");
-        // You may want to reinitialize any settings here that depend on the config
+
+        // Stop any existing monitoring intervals
+        if (clipboardMonitorInterval) {
+            clearInterval(clipboardMonitorInterval);
+            clipboardMonitorInterval = null;
+        }
+        if (ocrMonitorInterval) {
+            clearInterval(ocrMonitorInterval);
+            ocrMonitorInterval = null;
+        }
+
+        // Start the appropriate monitoring based on the reloaded config
+        if (config.monitorMode === "clipboard") {
+            clipboardMonitorInterval = setInterval(() => {
+                const currentText = clipboard.readText();
+                processAndSendText(currentText);
+            }, config.captureInterval);
+            console.log("Switched to clipboard monitoring mode.");
+            logMessage("Switched to clipboard monitoring mode.");
+        } else if (config.monitorMode === "ocr") {
+            ocrMonitorInterval = setInterval(async () => {
+                const recognizedText = await captureAndProcessScreen();
+                processAndSendText(recognizedText);
+            }, config.captureInterval);
+            console.log("Switched to OCR monitoring mode.");
+            logMessage("Switched to OCR monitoring mode.");
+        }
+
     } catch (error) {
         console.error("Failed to reload config:", error);
         logMessage("Failed to reload config.");

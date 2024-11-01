@@ -6,12 +6,18 @@
     <title>Select OCR Area</title>
     <style>
         html,
-        body,
-        canvas {
+        body {
             margin: 0;
             padding: 0;
+            overflow: hidden;
+            /* Prevent scrollbars */
             width: 100%;
             height: 100%;
+        }
+
+        #selectionCanvas {
+            width: 100vw;
+            height: 100vh;
             cursor: crosshair;
         }
     </style>

@@ -158,6 +158,10 @@ async function captureAndProcessScreen() {
         const croppedImage = await fullImage.crop(x, y, width, height);
 
         const filePath = path.join(app.getPath("temp"), "ocr-capture.png");
+        if (!fs.existsSync(filePath)) {
+            console.error("File does not exist at", filePath);
+            return "";
+        }
 
         // Write the cropped image to the temp path and ensure it exists
         fs.writeFileSync(filePath, await croppedImage.toPng());

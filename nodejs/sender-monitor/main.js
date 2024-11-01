@@ -38,13 +38,10 @@ ipcMain.on("close-qr-window", () => {
     }
 });
 
-async function createQRWindow(url) {
+async function createQRWindow(qrDataUrl) {
     if (qrWindow) {
         qrWindow.close();
     }
-
-    // Use await to ensure QR code generation completes before moving on
-    const qrDataUrl = await QRCode.toDataURL(url);
 
     qrWindow = new BrowserWindow({
         width: 220,
@@ -219,8 +216,12 @@ function updateTrayMenu() {
         {
             label: "Show QR Code",
             click: async () => {
-                const qrDataUrl = await QRCode.toDataURL(displayAppURL); // Generate a fresh QR code
-                createQRWindow(qrDataUrl);
+                try {
+                    const qrDataUrl = await QRCode.toDataURL(displayAppURL); // Generate fresh QR code
+                    createQRWindow(qrDataUrl);
+                } catch (error) {
+                    console.error("Failed to generate QR code:", error);
+                }
             }
         },
         {
@@ -264,17 +265,12 @@ app.on("ready", () => {
     tray = new Tray(getIconPath("icon-disconnected.png"));
     tray.setToolTip(`Session ID: ${sessionId}`);
 
-    QRCode.toDataURL(displayAppURL, (err, url) => {
-        if (err) {
-            console.error("Failed to generate QR code:", err);
-        } else {
-            // Show the QR code window at startup
-            createQRWindow(url);
-
-            // Set up tray context menu with the QR option and other options
-            updateTrayMenu();
-        }
-    });
+    QRCode.toDataURL(displayAppURL)
+        .then((url) => {
+            createQRWindow(url); // Show QR code on startup with generated data URL
+            updateTrayMenu();    // Initialize tray menu
+        })
+        .catch((err) => console.error("Failed to generate QR code:", err));
 
     attemptConnection();
 

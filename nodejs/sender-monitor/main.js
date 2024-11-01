@@ -165,10 +165,13 @@ async function captureAndProcessScreen() {
             return ""; // Exit early if file creation failed
         }
 
+        // Call performOCR with the useEdgeForOCR flag
         const recognizedText = await performOCR(filePath, useEdgeForOCR);
+
+        // Log recognized text
         console.log("OCR completed, recognized text:", recognizedText);
 
-        // Clean up the temp file only after OCR completes
+        // Clean up the temp file after OCR completes
         fs.unlinkSync(filePath);
         return recognizedText || ""; // Return the OCR text or an empty string
 

@@ -47,6 +47,8 @@ const ocrImageEdge = edge.func({
 
 // Main OCR function that switches based on config
 async function performOCR(filePath, useEdgeForOCR) {
+    console.log("performOCR called with useEdgeForOCR:", useEdgeForOCR); // Debug log
+
     if (useEdgeForOCR) {
         try {
             const text = await ocrImageEdge(filePath);

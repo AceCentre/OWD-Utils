@@ -1,4 +1,4 @@
-const { app, Tray, Menu, shell, clipboard, BrowserWindow, ipcMain } = require("electron");
+const { app, Tray, Menu, shell, clipboard, BrowserWindow, ipcMain, screen} = require("electron");
 const path = require("path");
 const fs = require("fs");
 const webrtc = require("./webrtc");
@@ -6,6 +6,7 @@ const QRCode = require("qrcode");
 const { Monitor } = require("node-screenshots");
 const { performOCR } = require("./ocr");
 const { Translator } = require("google-translate-api-x");
+const sharp = require("sharp");
 
 let tray;
 let qrWindow;
@@ -18,6 +19,7 @@ let clipboardMonitorInterval;
 let ocrMonitorInterval;
 const maxRetries = 10;
 const retryInterval = 3000;
+let overlayWindow = null; 
 
 const logFilePath = path.join(app.getPath("userData"), "log.txt");
 
@@ -37,6 +39,45 @@ ipcMain.on("close-qr-window", () => {
         qrWindow.close();
     }
 });
+
+function createOverlayWindow() {
+  overlayWindow = new BrowserWindow({
+    fullscreen: true,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    resizable: false,
+    webPreferences: {
+      contextIsolation: true,
+      preload: path.join(__dirname, "overlay-preload.js"),
+    },
+  });
+
+  overlayWindow.loadURL(`file://${__dirname}/overlay.html`);
+  overlayWindow.on("closed", () => {
+    overlayWindow = null;
+    console.log("Overlay window closed");
+  });
+}
+
+// Updated `set-capture-area` handler
+ipcMain.on("set-capture-area", (event, bounds) => {
+  console.log("Received capture area bounds from overlay:", bounds);
+  if (!bounds || !bounds.width || !bounds.height) {
+    console.error("Invalid capture area bounds received:", bounds);
+    return;
+  }
+
+  config.captureArea = bounds;
+  fs.writeFileSync(configFilePath, JSON.stringify(config, null, 2), "utf-8");
+  console.log(`Updated capture area to new values: ${JSON.stringify(bounds)}`);
+
+  // Close the overlay window after capturing bounds
+  if (overlayWindow) {
+    overlayWindow.close();
+  }
+});
+
 
 async function createQRWindow(qrDataUrl) {
     if (qrWindow) {
@@ -82,7 +123,39 @@ function reloadConfig() {
         config = JSON.parse(fs.readFileSync(configFilePath, "utf-8"));
         console.log("Configuration reloaded.");
         logMessage("Configuration reloaded from config.json.");
-        // You may want to reinitialize any settings here that depend on the config
+
+        // Stop any existing monitoring intervals
+        if (clipboardMonitorInterval) {
+            clearInterval(clipboardMonitorInterval);
+            clipboardMonitorInterval = null;
+        }
+        if (ocrMonitorInterval) {
+            clearInterval(ocrMonitorInterval);
+            ocrMonitorInterval = null;
+        }
+
+        // Start the appropriate monitoring based on the reloaded config
+        if (config.monitorMode === "clipboard") {
+            clipboardMonitorInterval = setInterval(() => {
+                const currentText = clipboard.readText();
+                processAndSendText(currentText);
+            }, config.captureInterval);
+            console.log("Switched to clipboard monitoring mode.");
+            logMessage("Switched to clipboard monitoring mode.");
+        } else if (config.monitorMode === "ocr") {
+            ocrMonitorInterval = setInterval(async () => {
+                const recognizedText = await captureAndProcessScreen();
+                processAndSendText(recognizedText);
+            }, config.captureInterval);
+            console.log("Switched to OCR monitoring mode.");
+            logMessage("Switched to OCR monitoring mode.");
+        }
+
+        // Update translation settings based on the reloaded config
+        const isTranslationEnabled = config.translation?.enabled || false;
+        console.log(`Translation enabled: ${isTranslationEnabled}`);
+        logMessage(`Translation enabled: ${isTranslationEnabled}`);
+
     } catch (error) {
         console.error("Failed to reload config:", error);
         logMessage("Failed to reload config.");
@@ -91,64 +164,104 @@ function reloadConfig() {
 
 // Capture and OCR function with return of recognized text
 async function captureAndProcessScreen() {
-    const { x, y, width, height } = config.captureArea;
-    const useEdgeForOCR = config.useEdgeForOCR;
+  const { x, y, width, height } = config.captureArea;
+  const useEdgeForOCR = config.useEdgeForOCR;
+  const fullImagePath = path.join(app.getPath("temp"), "full-image.png");
+  const croppedImagePath = path.join(app.getPath("temp"), "cropped-image.png");
 
-    const filePath = path.join(app.getPath("temp"), "ocr-capture.png");
+  try {
+    console.log("Starting screen capture and cropping process...");
 
-    try {
-        const monitor = Monitor.all().find(m => m.isPrimary);
-        if (!monitor) {
-            console.error("No primary monitor found.");
-            return "";
-        }
-
-        // Capture the full image
-        const fullImage = await monitor.captureImage();
-        if (!fullImage) {
-            console.error("Image capture failed.");
-            return "";
-        }
-        
-        // Crop the image to the specified capture area
-        const croppedImage = await fullImage.crop(x, y, width, height);
-        if (!croppedImage) {
-            console.error("Image cropping failed.");
-            return "";
-        }
-
-        // Write the cropped image to the temp path
-        const imageBuffer = await croppedImage.toPng();
-        fs.writeFileSync(filePath, imageBuffer);
-
-        // Confirm file existence
-        if (!fs.existsSync(filePath)) {
-            console.error("File does not exist at", filePath);
-            return ""; // Exit early if file creation failed
-        }
-
-        console.log("Image successfully saved at", filePath);
-
-        // Call performOCR with the useEdgeForOCR flag
-        const recognizedText = await performOCR(filePath, useEdgeForOCR);
-
-        // Log recognized text
-        console.log("OCR completed, recognized text:", recognizedText);
-
-        return recognizedText || ""; // Return the OCR text or an empty string
-
-    } catch (error) {
-        console.error("Screen capture or OCR failed:", error);
-        logMessage("Error during screen capture or OCR");
-        return "";
-    } finally {
-        // Clean up the temp file after everything is done
-        if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
-            console.log("Temporary OCR file cleaned up:", filePath);
-        }
+    const monitor = Monitor.all().find(m => m.isPrimary);
+    if (!monitor) {
+      console.error("No primary monitor found.");
+      return;
     }
+
+    const fullImage = await monitor.captureImage();
+    if (!fullImage) {
+      console.error("Image capture failed.");
+      return;
+    }
+
+    // Convert the full captured image to a PNG buffer
+    const fullImageBuffer = await fullImage.toPng().catch(err => {
+        console.error("Failed to create fullImageBuffer:", err);
+        throw err; 
+    });
+
+    // Save the full image
+    await fs.promises.writeFile(fullImagePath, fullImageBuffer);
+    console.log("Full screenshot saved at", fullImagePath);
+
+    if (!fs.existsSync(fullImagePath)) {
+      console.error("Full screenshot file does not exist at", fullImagePath);
+      return;
+    }
+
+    // Get image dimensions using sharp to verify metadata
+    const imageMetadata = await sharp(fullImagePath).metadata();
+    console.log("Full image dimensions:", imageMetadata);
+
+    // Get the primary display's scaling factor
+    const primaryDisplay = screen.getPrimaryDisplay();
+    const scaleFactor = primaryDisplay.scaleFactor;
+    console.log("Primary display scale factor:", scaleFactor);
+
+    // Adjust bounds to account for scaling
+    const scaledX = Math.round(x * scaleFactor);
+    const scaledY = Math.round(y * scaleFactor);
+    const scaledWidth = Math.round(width * scaleFactor);
+    const scaledHeight = Math.round(height * scaleFactor);
+
+    console.log(`Scaled crop bounds: x=${scaledX}, y=${scaledY}, width=${scaledWidth}, height=${scaledHeight}`);
+
+    // Adjust bounds to ensure they are within the image dimensions
+    const adjustedX = Math.min(Math.max(scaledX, 0), imageMetadata.width);
+    const adjustedY = Math.min(Math.max(scaledY, 0), imageMetadata.height);
+    const adjustedWidth = Math.min(scaledWidth, imageMetadata.width - adjustedX);
+    const adjustedHeight = Math.min(scaledHeight, imageMetadata.height - adjustedY);
+
+    console.log(`Adjusted crop bounds for the image: x=${adjustedX}, y=${adjustedY}, width=${adjustedWidth}, height=${adjustedHeight}`);
+
+    // Now proceed to crop the image using sharp with the adjusted dimensions
+    await sharp(fullImagePath)
+      .extract({ left: adjustedX, top: adjustedY, width: adjustedWidth, height: adjustedHeight })
+      .toFile(croppedImagePath);
+
+    console.log("Cropped image successfully saved at", croppedImagePath);
+
+    if (!fs.existsSync(croppedImagePath)) {
+      console.error("Cropped image file does not exist at", croppedImagePath);
+      return;
+    }
+
+    const recognizedText = await performOCR(croppedImagePath, useEdgeForOCR);
+
+    if (recognizedText === undefined) {
+      console.log("OCR result was undefined. Opening image directory for inspection...");
+    } else {
+      console.log("OCR completed, recognized text:", recognizedText);
+    }
+
+    return recognizedText || "";
+    
+  } catch (error) {
+    console.error("Error occurred during capture or cropping process:", error);
+  } finally {
+    // Clean up temporary files if they exist
+    if (fs.existsSync(croppedImagePath)) {
+      fs.unlinkSync(croppedImagePath);
+      console.log("Temporary OCR file cleaned up:", croppedImagePath);
+    }
+
+    if (fs.existsSync(fullImagePath)) {
+      fs.unlinkSync(fullImagePath);
+      console.log("Temporary OCR file cleaned up of screen:", fullImagePath);
+    }
+  }
 }
+
 
 const translator = new Translator({
     from: config.translation?.sourceLang || "en",
@@ -266,6 +379,10 @@ function updateTrayMenu() {
             label: "Open Config",
             click: () => shell.openPath(configFilePath)
                 .catch(err => console.error("Failed to open config file:", err))
+        },
+        {
+            label: "Define OCR Area", // New option to define OCR area
+            click: createOverlayWindow,
         },
         {
             label: "Reload Config",

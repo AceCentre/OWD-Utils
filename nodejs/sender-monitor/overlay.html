@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Select OCR Area</title>
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            /* Prevent scrollbars */
+            width: 100%;
+            height: 100%;
+        }
+
+        #selectionCanvas {
+            width: 100vw;
+            height: 100vh;
+            cursor: crosshair;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="selectionCanvas"></canvas>
+    <script src="overlay.js"></script>
+</body>
+
+</html>

@@ -5,18 +5,24 @@ const faker = require("@faker-js/faker").faker;
 const iceServers = require("./iceServers");
 
 const WEBSOCKET_URL = "wss://owd.acecentre.net";
+//const WEBSOCKET_URL = "ws://localhost:3000";
 
 class WebRTCConnection extends EventEmitter {
-    constructor() {
+    constructor(config) {
         super();
         this.peerConnections = {};
         this.dataChannels = {};
-        this.sessionId = 'not-set-sessionid';
-        this.sessionPersistent = false;
+        this.config;
+        this.sessionId = this.getSessionId();
         this.socket = io(WEBSOCKET_URL, { transports: ["websocket"], withCredentials: true });
         this.setupSocketListeners();
     }
 
+    updateConfig(newConfig) {
+        this.config = newConfig;
+        this.sessionId = this.getSessionId();
+    }
+    
     generateSessionId() {
         const word1 = faker.word.adjective();
         const word2 = faker.word.adjective();
@@ -24,16 +30,19 @@ class WebRTCConnection extends EventEmitter {
         return `${word1}-${word2}-${word3}`;
     }
 
-     getSessionId() {
-        // Check if sessionId is already stored in config
-        if (config.sessionId) {
-            this.sessionId = config.sessionId;
+    getSessionId() {
+        if (this.config && this.config.sessionId) {
             this.sessionPersistent = true;
+            return this.config.sessionId;
         } else {
-            this.sessionId = this.generateSessionId();
-            config.sessionId = this.sessionId;
             this.sessionPersistent = false;
+            return this.generateSessionId();
         }
+    }
+
+    startSession() {
+        console.log(`Session ID: ${this.sessionId}`);
+        return this.sessionId;
     }
 
     setupSocketListeners() {
@@ -146,4 +155,4 @@ class WebRTCConnection extends EventEmitter {
     }
 }
 
-module.exports = new WebRTCConnection();
+module.exports = WebRTCConnection;

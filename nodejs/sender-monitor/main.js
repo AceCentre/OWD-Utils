@@ -1,7 +1,7 @@
 const { app, Tray, Menu, shell, clipboard, BrowserWindow, ipcMain, screen} = require("electron");
 const path = require("path");
 const fs = require("fs");
-const webrtc = require("./webrtc");
+const WebRTCConnection = require("./webrtc");
 const QRCode = require("qrcode");
 const { Monitor } = require("node-screenshots");
 const { performOCR } = require("./ocr");
@@ -32,7 +32,7 @@ if (app.isPackaged && !fs.existsSync(configFilePath)) {
 }
 
 let config = JSON.parse(fs.readFileSync(configFilePath, "utf-8"));
-
+const webrtc = new WebRTCConnection(config);
 
 ipcMain.on("close-qr-window", () => {
     if (qrWindow) {
@@ -121,6 +121,9 @@ async function createQRWindow(qrDataUrl) {
 function reloadConfig() {
     try {
         config = JSON.parse(fs.readFileSync(configFilePath, "utf-8"));
+        if (config.sessionId !== webrtc.sessionId) {
+            webrtc.updateConfig(config);
+        }
         console.log("Configuration reloaded.");
         logMessage("Configuration reloaded from config.json.");
 

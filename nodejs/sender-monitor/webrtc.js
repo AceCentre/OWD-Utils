@@ -11,7 +11,8 @@ class WebRTCConnection extends EventEmitter {
         super();
         this.peerConnections = {};
         this.dataChannels = {};
-        this.sessionId = this.generateSessionId();
+        this.sessionId = 'not-set-sessionid';
+        this.sessionPersistent = false;
         this.socket = io(WEBSOCKET_URL, { transports: ["websocket"], withCredentials: true });
         this.setupSocketListeners();
     }
@@ -23,14 +24,22 @@ class WebRTCConnection extends EventEmitter {
         return `${word1}-${word2}-${word3}`;
     }
 
-    startSession() {
-        console.log(`Session ID: ${this.sessionId}`);
-        return this.sessionId;
+     getSessionId() {
+        // Check if sessionId is already stored in config
+        if (config.sessionId) {
+            this.sessionId = config.sessionId;
+            this.sessionPersistent = true;
+        } else {
+            this.sessionId = this.generateSessionId();
+            config.sessionId = this.sessionId;
+            this.sessionPersistent = false;
+        }
     }
 
     setupSocketListeners() {
+        this.getSessionId()
         this.socket.on("connect", () => {
-            this.socket.emit("joinSession", this.sessionId);
+            this.socket.emit("joinSession", this.sessionId, this.sessionPersistent);
             this.emit("connected"); // Emit connected event
         });
 
